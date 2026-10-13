@@ -1,0 +1,118 @@
+.registro-modal {
+    display: none;
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    background: rgba(0, 0, 0, 0.5);
+
+    z-index: 9999;
+
+    justify-content: center;
+    align-items: center;
+}
+
+.registro-modal-content {
+
+    width: 90%;
+    max-width: 900px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    box-shadow: 0 0 25px rgba(0,0,0,.4);
+}
+
+/* Contenedor de la celda de acción */
+.action-cell {
+  position: relative;
+  text-align: right;
+  vertical-align: middle;
+}
+
+/* Ocultar los botones por defecto y darles una transición suave */
+.action-buttons {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+  display: inline-flex;
+  gap: 5px;
+}
+
+/* Cuando se pasa el mouse sobre la FILA (tr), muestra los botones */
+tr:hover .action-buttons {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Opcional: Un ligero cambio de fondo a la fila activa para mejorar el feedback visual */
+tr:hover {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.compras-filtros {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 2fr)
+        minmax(150px, 1fr)
+        minmax(190px, 1.4fr)
+        minmax(150px, 1fr)
+        minmax(96px, auto);
+    gap: 0.5rem;
+    align-items: end;
+    max-width: 100%;
+}
+
+.compras-filtros > * {
+    min-width: 0;
+}
+
+.compras-filtros .form-control,
+.compras-filtros .form-select {
+    width: 100%;
+}
+
+.compras-filtros-acciones {
+    display: grid;
+}
+
+@media (max-width: 992px) {
+    .compras-filtros {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .compras-filtros {
+        grid-template-columns: 1fr;
+    }
+}
+
+#menuMesesCompras {
+    background: #fff;
+    border: 1px solid #cfd4dc;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+    z-index: 1050;
+}
+
+#menuMesesCompras .dropdown-item {
+    color: #1f2937;
+    background: #fff;
+}
+
+#menuMesesCompras .dropdown-item:hover,
+#menuMesesCompras .dropdown-item:focus {
+    color: #0f172a;
+    background: #e9f2ff;
+}
+
+#menuMesesCompras .dropdown-item.disabled {
+    color: #6b7280;
+    background: #f8f9fa;
+}

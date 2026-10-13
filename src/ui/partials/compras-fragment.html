@@ -1,0 +1,283 @@
+<div class="container-fluid mt-4">
+  <h3 class="mb-4" id="pageTitle">Compras mensuales</h3>
+
+  <div class="card border-secondary mb-3 w-100">
+    <div class="card-header">
+      <div
+        class="d-flex align-items-center justify-content-between flex-wrap gap-2"
+      >
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span>Compra</span>
+
+          <div class="btn-group" role="group" aria-label="Compra de selector">
+            <button
+              id="btnMensual"
+              type="button"
+              class="btn btn-primary dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              Mensual
+            </button>
+
+            <div
+              id="menuMesesCompras"
+              class="dropdown-menu"
+              aria-labelledby="btnMensual"
+              style="min-width: 10rem"
+            >
+              <button class="dropdown-item disabled" type="button">
+                Sin meses registrados
+              </button>
+            </div>
+          </div>
+
+          <span id="labelMesCompras" class="fw-semibold text-primary"></span>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2">
+          <button id="btnAgregar" type="button" class="btn btn-success">
+            Agregar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="compras-filtros mb-3">
+        <div>
+          <label for="filtroComprasTexto" class="form-label"> Buscar </label>
+          <input
+            type="search"
+            id="filtroComprasTexto"
+            class="form-control"
+            placeholder="Producto, colaborador, codigo o notas"
+          />
+        </div>
+
+        <div>
+          <label for="filtroComprasEstatus" class="form-label"> Estatus </label>
+          <select id="filtroComprasEstatus" class="form-select">
+            <option value="">Todos</option>
+            <option>Por Solicitar</option>
+            <option>Solicitado</option>
+            <option>Aprobado</option>
+            <option>Entregado</option>
+            <option>Cancelado</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="filtroComprasDepartamento" class="form-label">
+            Departamento
+          </label>
+          <select id="filtroComprasDepartamento" class="form-select">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="filtroComprasUnidad" class="form-label"> Unidad </label>
+          <select id="filtroComprasUnidad" class="form-select">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div class="compras-filtros-acciones">
+          <button
+            type="button"
+            id="btnLimpiarFiltrosCompras"
+            class="btn btn-outline-secondary"
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="tablaCompras" class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Producto</th>
+              <th scope="col">Departamento</th>
+              <th scope="col">Unidad Negocio</th>
+              <th scope="col">Colaborador</th>
+              <th scope="col">Fecha Solicitud</th>
+              <th scope="col">Estatus</th>
+              <th scope="col">Código</th>
+              <th scope="col">Notas</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+
+          <tbody id="tbodyCompras">
+            <!-- Filas generadas dinámicamente desde compras.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registro Nuevo -->
+<div id="registroNuevoModal" class="registro-modal" aria-hidden="true">
+  <div class="registro-modal-content card">
+    <div class="card-header">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Nuevo Registro</h5>
+
+        <button
+          type="button"
+          id="btnCerrarModal"
+          class="btn-close"
+          aria-label="Close"
+        ></button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form id="purchaseForm">
+        <fieldset>
+          <div class="mb-3">
+            <label for="itemNumber" class="form-label"> Cantidad </label>
+
+            <input
+              type="number"
+              class="form-control"
+              id="itemNumber"
+              min="1"
+              placeholder="Cantidad"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="productName" class="form-label"> Producto </label>
+
+            <input
+              type="text"
+              class="form-control"
+              id="productName"
+              placeholder="Nombre del producto"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="department" class="form-label"> Departamento </label>
+
+            <select class="form-select" id="department" required>
+              <option value="" selected disabled>
+                Seleccione un departamento
+              </option>
+
+              <option>Administración XPD</option>
+              <option>Análisis de Negocio</option>
+              <option>Asesoría</option>
+              <option>Auditoría-Contabilidad 3</option>
+              <option>Contabilidad 1</option>
+              <option>Contabilidad 2</option>
+              <option>Contraloría</option>
+              <option>Desarrollo XPD</option>
+              <option>Dirección</option>
+              <option>Gerencia General de Operaciones</option>
+              <option>Gerencia Operaciones XPD</option>
+              <option>Help AI</option>
+              <option>Jurídico Contencioso</option>
+              <option>Jurídico Laboral</option>
+              <option>Mercadotecnia</option>
+              <option>Nóminas</option>
+              <option>Operaciones XPD</option>
+              <option>Recursos Humanos</option>
+              <option>Sistemas de Gestión</option>
+              <option>Sistemas Informáticos</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="businessUnit" class="form-label">
+              Unidad de Negocio
+            </label>
+
+            <select class="form-select" id="businessUnit" required>
+              <option value="" selected disabled>Seleccione una unidad</option>
+
+              <option>Basal Capital</option>
+              <option>XPD</option>
+              <option>HELP AI</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="colaborador" class="form-label">
+              Colaborador(es)
+            </label>
+
+            <input
+              type="text"
+              class="form-control"
+              id="colaborador"
+              placeholder="Nombre del colaborador"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="requestDate" class="form-label">
+              Fecha de Solicitud
+            </label>
+
+            <input type="date" class="form-control" id="requestDate" required />
+          </div>
+
+          <div class="mb-3">
+            <label for="status" class="form-label"> Estatus </label>
+
+            <select class="form-select" id="status" required>
+              <option>Por Solicitar</option>
+              <option>Solicitado</option>
+              <option>Aprobado</option>
+              <option>Entregado</option>
+              <option>Cancelado</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="productCode" class="form-label"> Código </label>
+
+            <input
+              type="text"
+              class="form-control"
+              id="productCode"
+              placeholder="Número de requisición"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label"> Notas </label>
+
+            <textarea
+              class="form-control"
+              id="notes"
+              rows="4"
+              placeholder="Observaciones adicionales"
+            ></textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" id="btnSave" class="btn btn-primary">
+              Guardar
+            </button>
+
+            <button type="reset" id="btnClear" class="btn btn-secondary">
+              Limpiar
+            </button>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../js/compras.js"></script>

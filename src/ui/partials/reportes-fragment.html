@@ -1,0 +1,151 @@
+<!-- Contenido visible en la pagina Reportes -->
+<div class="container-fluid mt-4" id="reportesRoot">
+  <h3 class="mb-4" id="pageTitle">Reportes</h3>
+
+  <!-- Fila de KPIs -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card kpi-card h-100">
+        <div class="card-body text-center">
+          <span class="kpi-valor" id="kpiTotalSolicitudes">0</span>
+          <span class="kpi-label">Solicitudes de compra</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card kpi-card h-100">
+        <div class="card-body text-center">
+          <span class="kpi-valor" id="kpiTotalUnidades">0</span>
+          <span class="kpi-label">Unidades solicitadas</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card kpi-card h-100">
+        <div class="card-body text-center">
+          <span class="kpi-valor" id="kpiTotalAlmacen">0</span>
+          <span class="kpi-label">Productos en almacen</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card kpi-card h-100">
+        <div class="card-body text-center">
+          <span class="kpi-valor kpi-valor-alerta" id="kpiTotalNoFuncionales">0</span>
+          <span class="kpi-label">Equipos no funcionales</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seccion COMPRAS -->
+  <h5 class="reporte-seccion-titulo mb-3">Compras</h5>
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Departamento que mas material solicita</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartDeptSolicita"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Productos mas comprados</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartProductosMas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Productos menos comprados</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartProductosMenos"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Compras por estatus</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartEstatus"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Compras por unidad de negocio</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartUnidadNegocio"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Tendencia mensual de compras</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartTendenciaMensual"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seccion ALMACEN -->
+  <h5 class="reporte-seccion-titulo mb-3 mt-4">Almacen</h5>
+
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Departamento con mas averias / equipos no funcionales</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartAverias"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Estado de funcionamiento del inventario</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartFuncionamiento"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">Inventario por departamento</div>
+        <div class="card-body">
+          <div class="reporte-chart-wrapper">
+            <canvas id="chartInventarioDept"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/reportes.js"></script>

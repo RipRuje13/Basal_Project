@@ -1,0 +1,21 @@
+{
+  "name": "basal-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "electron": "^42.3.3",
+    "electron-reload": "^2.0.0-alpha.1",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^2.0.3"
+  }
+}

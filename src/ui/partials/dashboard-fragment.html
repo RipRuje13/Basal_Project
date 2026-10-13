@@ -1,0 +1,70 @@
+
+<div class="container-fluid mt-4" id="dashboardRoot">
+
+    <h3 id="pageTitle" class="mb-4">Dashboard</h3>
+
+    <div class="row g-3" id="dashboardCards">
+
+        <div class="col-md-6 col-lg-3">
+            <div id="cardComprasPendientes" class="card text-center">
+                <div class="card-body">
+                    <h6>Compras Pendientes</h6>
+                    <h2 id="totalComprasPendientes">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div id="cardComprasAprobadas" class="card text-center">
+                <div class="card-body">
+                    <h6>Compras Aprobadas</h6>
+                    <h2 id="totalComprasAprobadas">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div id="cardEquiposInactivos" class="card text-center">
+                <div class="card-body">
+                    <h6>Equipos Inactivos</h6>
+                    <h2 id="totalEquiposInactivos">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div id="cardEquiposAveriados" class="card text-center">
+                <div class="card-body">
+                    <h6>Equipos Averiados</h6>
+                    <h2 id="totalEquiposAveriados">0</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row mt-4" id="dashboardContent">
+
+        <div class="col-lg-8">
+            <div id="chartCard" class="card">
+                <div class="card-header">Gráfica por Departamento</div>
+                <div class="card-body">
+                    <div class="reporte-chart-wrapper">
+                        <canvas id="departmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div id="movementsCard" class="card">
+                <div class="card-header">Últimos Movimientos</div>
+                <div class="card-body">
+                    <ul id="movementList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>

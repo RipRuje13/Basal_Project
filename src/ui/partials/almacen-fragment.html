@@ -1,0 +1,465 @@
+<div class="container-fluid mt-4 almacen-page">
+  <h3 class="mb-4" id="pageTitle">Almacen</h3>
+
+  <div class="card border-secondary mb-3 w-100">
+    <div class="card-header">
+      <div
+        class="d-flex align-items-center justify-content-between flex-wrap gap-2"
+      >
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span>Productos</span>
+
+          <div class="btn-group" role="group" aria-label="Selector mensual">
+            <button
+              id="btnMensualAlmacen"
+              type="button"
+              class="btn btn-primary dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              Mensual
+            </button>
+
+            <div
+              id="menuMesesAlmacen"
+              class="dropdown-menu"
+              aria-labelledby="btnMensualAlmacen"
+              style="min-width: 10rem"
+            >
+              <button class="dropdown-item disabled" type="button">
+                Sin meses registrados
+              </button>
+            </div>
+          </div>
+
+          <span id="labelMesAlmacen" class="fw-semibold text-primary"></span>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2">
+          <button id="btnAgregarAlmacen" type="button" class="btn btn-success">
+            Agregar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="almacen-filtros mb-3">
+        <div>
+          <label for="filtroAlmacenTexto" class="form-label">Buscar</label>
+          <input
+            type="search"
+            id="filtroAlmacenTexto"
+            class="form-control"
+            placeholder="Producto, marca, serie, etiqueta o usuario"
+          />
+        </div>
+
+        <div>
+          <label for="filtroAlmacenFunciona" class="form-label">
+            Funciona
+          </label>
+          <select id="filtroAlmacenFunciona" class="form-select">
+            <option value="">Todos</option>
+            <option>Si</option>
+            <option>No</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="filtroAlmacenDepartamento" class="form-label">
+            Departamento
+          </label>
+          <select id="filtroAlmacenDepartamento" class="form-select">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="filtroAlmacenUbicacion" class="form-label">
+            Ubicacion
+          </label>
+          <select id="filtroAlmacenUbicacion" class="form-select">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div class="almacen-filtros-acciones">
+          <button
+            type="button"
+            id="btnLimpiarFiltrosAlmacen"
+            class="btn btn-outline-secondary"
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="tablaAlmacen" class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Producto</th>
+              <th scope="col">Marca</th>
+              <th scope="col">Modelo</th>
+              <th scope="col">No. Serie</th>
+              <th scope="col">Codigo de Etiqueta</th>
+              <th scope="col">Departamento</th>
+              <th scope="col">Caracteristicas</th>
+              <th scope="col">Funciona</th>
+              <th scope="col">Ubicacion</th>
+              <th scope="col">Usuarios</th>
+              <th scope="col">Fecha Ingreso</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+
+          <tbody id="tbodyAlmacen">
+            <tr>
+              <td colspan="13" class="text-center text-muted py-4">
+                Cargando productos de almacen...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="detalleProductoCard" class="card shadow-sm border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">
+        <i class="bi bi-pc-display-horizontal me-2"></i>
+        Detalles del Producto #<span id="detalleProductoId">sin seleccionar</span>
+      </h4>
+
+      <span id="detalleFuncionaBadge" class="badge bg-secondary fs-6">
+        Sin producto
+      </span>
+    </div>
+
+    <div class="card-body">
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">ID</label>
+              <p id="detalleId" class="form-control-plaintext text-muted">
+                Selecciona un producto de la tabla.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Producto</label>
+              <p id="detalleProducto" class="form-control-plaintext text-muted">
+                Sin producto seleccionado.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Marca</label>
+              <p id="detalleMarca" class="form-control-plaintext text-muted">
+                La marca aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Modelo</label>
+              <p id="detalleModelo" class="form-control-plaintext text-muted">
+                El modelo aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">No. Serie</label>
+              <p id="detalleNoSerie" class="form-control-plaintext text-muted">
+                El numero de serie aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Codigo de Etiqueta</label>
+              <p id="detalleCodigoEtiqueta" class="form-control-plaintext text-muted">
+                El codigo de etiqueta aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Departamento</label>
+              <p id="detalleDepartamento" class="form-control-plaintext text-muted">
+                El departamento aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Ubicacion actual</label>
+              <p id="detalleUbicacion" class="form-control-plaintext text-muted">
+                La ubicacion aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Usuario actual</label>
+              <p id="detalleUsuarioActual" class="form-control-plaintext text-muted">
+                El usuario aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Fecha Ingreso</label>
+              <p id="detalleFechaIngreso" class="form-control-plaintext text-muted">
+                La fecha de ingreso aparecera aqui.
+              </p>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label fw-bold">Caracteristicas</label>
+              <div id="detalleCaracteristicas" class="historial-box text-muted">
+                Selecciona un producto para ver sus caracteristicas.
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label fw-bold">Historial de usuarios</label>
+              <div id="detalleHistorialUsuarios" class="historial-box text-muted">
+                Aun no hay un producto seleccionado.
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label fw-bold">Historial de ubicaciones</label>
+              <div id="detalleHistorialUbicaciones" class="historial-box text-muted">
+                Aun no hay un producto seleccionado.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 border-start">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+              <i class="bi bi-images me-2"></i>
+              Fotografias (<span id="detalleFotosConteo">0</span>)
+            </h5>
+          </div>
+
+          <div id="galeriaProducto" class="galeria-producto galeria-vacia">
+            <div class="text-muted text-center py-4">
+              Selecciona un producto para ver sus fotografias.
+            </div>
+          </div>
+
+          <hr class="my-4" />
+
+          <div class="border rounded-3 p-4 text-center">
+            <i class="bi bi-cloud-arrow-up display-5 text-secondary"></i>
+
+            <h6 class="mt-3">Agregar nuevas fotografias</h6>
+
+            <p class="text-muted mb-3">
+              Selecciona imagenes desde tu equipo. Se copiara una version a la
+              carpeta local de almacen y se guardara su ruta en la base de datos.
+            </p>
+
+            <input
+              class="form-control"
+              type="file"
+              id="imagenesProducto"
+              multiple
+              accept=".jpg,.jpeg,.png,.webp"
+              disabled
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer d-flex justify-content-end gap-2">
+      <button id="btnCerrarDetalleAlmacen" class="btn btn-outline-secondary">
+        <i class="bi bi-x-circle me-1"></i>
+        Cerrar
+      </button>
+
+      <button id="btnEditarDetalleAlmacen" class="btn btn-primary" disabled>
+        <i class="bi bi-pencil-fill me-1"></i>
+        Editar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="registroNuevoModalAlmacen" class="registro-modal" aria-hidden="true">
+  <div class="registro-modal-content card">
+    <div class="card-header">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Nueva Solicitud</h5>
+
+        <button
+          type="button"
+          id="btnCerrarModalAlmacen"
+          class="btn-close"
+          aria-label="Close"
+        ></button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form id="almacenForm">
+        <fieldset>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="almacenProducto" class="form-label">Producto</label>
+              <input
+                type="text"
+                class="form-control"
+                id="almacenProducto"
+                placeholder="Nombre del producto"
+                required
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenMarca" class="form-label">Marca</label>
+              <input
+                type="text"
+                class="form-control"
+                id="almacenMarca"
+                placeholder="Marca del producto"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenModelo" class="form-label">Modelo</label>
+              <input
+                type="text"
+                class="form-control"
+                id="almacenModelo"
+                placeholder="Modelo del producto"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenNoSerie" class="form-label">No. Serie</label>
+              <input
+                type="text"
+                class="form-control"
+                id="almacenNoSerie"
+                placeholder="Numero de serie"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenCodigoEtiqueta" class="form-label">
+                Codigo de Etiqueta
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="almacenCodigoEtiqueta"
+                placeholder="Codigo de etiqueta"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenDepartamento" class="form-label">
+                Departamento
+              </label>
+              <select class="form-select" id="almacenDepartamento" required>
+                <option value="" selected disabled>
+                  Seleccione un departamento
+                </option>
+                <option>Administracion XPD</option>
+                <option>Analisis de Negocio</option>
+                <option>Asesoria</option>
+                <option>Auditoria-Contabilidad 3</option>
+                <option>Contabilidad 1</option>
+                <option>Contabilidad 2</option>
+                <option>Contraloria</option>
+                <option>Desarrollo XPD</option>
+                <option>Direccion</option>
+                <option>Gerencia General de Operaciones</option>
+                <option>Gerencia Operaciones XPD</option>
+                <option>Help AI</option>
+                <option>Juridico Contencioso</option>
+                <option>Juridico Laboral</option>
+                <option>Mercadotecnia</option>
+                <option>Nominas</option>
+                <option>Operaciones XPD</option>
+                <option>Recursos Humanos</option>
+                <option>Sistemas de Gestion</option>
+                <option>Sistemas Informaticos</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenFunciona" class="form-label">Funciona</label>
+              <select class="form-select" id="almacenFunciona" required>
+                <option value="" selected disabled>Seleccione estatus</option>
+                <option>Si</option>
+                <option>No</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenUbicacion" class="form-label">Ubicacion</label>
+              <select class="form-select" id="almacenUbicacion" required>
+                <option value="" selected disabled>Seleccione la oficina</option>
+                <option>Torre Alfa 14</option>
+                <option>Bodega Cosas Rotas</option>
+                <option>Bodega Cosas Funcionales</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenUsuario" class="form-label">Usuario</label>
+              <input
+                type="text"
+                class="form-control"
+                id="almacenUsuario"
+                placeholder="Nombre del usuario actual"
+                required
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="almacenFechaIngreso" class="form-label">
+                Fecha Ingreso
+              </label>
+              <input
+                type="date"
+                class="form-control"
+                id="almacenFechaIngreso"
+                required
+              />
+            </div>
+
+            <div class="col-12">
+              <label for="almacenCaracteristicas" class="form-label">
+                Caracteristicas
+              </label>
+              <textarea
+                class="form-control"
+                id="almacenCaracteristicas"
+                rows="4"
+                placeholder="Observaciones y caracteristicas del producto"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" id="btnGuardarAlmacen" class="btn btn-primary">
+              Guardar
+            </button>
+
+            <button type="reset" id="btnLimpiarAlmacen" class="btn btn-secondary">
+              Limpiar
+            </button>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../js/almacen.js"></script>

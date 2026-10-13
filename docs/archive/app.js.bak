@@ -1,0 +1,119 @@
+// ==========================================
+// REFERENCIAS DEL MENÚ
+// ==========================================
+
+const navHome = document.getElementById('navHome');
+const navDashboard = document.getElementById('navDashboard');
+const navCompras = document.getElementById('navCompras');
+const navEquipos = document.getElementById('navEquipos');
+const navAlmacen = document.getElementById('navAlmacen');
+const navReportes = document.getElementById('navReportes');
+
+const navConfiguracion = document.getElementById('navConfiguracion');
+const navUsuarios = document.getElementById('navUsuarios');
+const navDepartamentos = document.getElementById('navDepartamentos');
+const navPermisos = document.getElementById('navPermisos');
+
+// ==========================================
+// REFERENCIAS DEL BUSCADOR
+// ==========================================
+
+const searchForm = document.getElementById('searchForm');
+const searchInput = document.getElementById('searchInput');
+
+// ==========================================
+// REFERENCIAS DEL CONTENIDO
+// ==========================================
+
+const pageTitle = document.getElementById('pageTitle');
+const mainContainer = document.getElementById('mainContainer');
+
+// ==========================================
+// EVENTOS DE NAVEGACIÓN
+// ==========================================
+
+navDashboard.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    pageTitle.textContent = 'Dashboard';
+
+    console.log('Abriendo Dashboard');
+});
+
+navCompras.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    pageTitle.textContent = 'Compras';
+
+    console.log('Abriendo Compras');
+});
+
+navEquipos.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    pageTitle.textContent = 'Equipos';
+
+    console.log('Abriendo Equipos');
+});
+
+navAlmacen.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    pageTitle.textContent = 'Almacén';
+
+    console.log('Abriendo Almacén');
+});
+
+navReportes.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    pageTitle.textContent = 'Reportes';
+
+    console.log('Abriendo Reportes');
+});
+
+// ==========================================
+// MENÚ CONFIGURACIÓN
+// ==========================================
+
+navUsuarios.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    console.log('Administración de Usuarios');
+});
+
+navDepartamentos.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    console.log('Administración de Departamentos');
+});
+
+navPermisos.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    console.log('Administración de Permisos');
+});
+
+// ==========================================
+// BUSCADOR
+// ==========================================
+
+searchForm.addEventListener('submit', (e) => {
+
+    e.preventDefault();
+
+    const textoBusqueda = searchInput.value.trim();
+
+    console.log('Buscando:', textoBusqueda);
+
+});
+
+// ==========================================
+// INICIALIZACIÓN
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    console.log('Sistema Inventario SIN iniciado');
+
+});
