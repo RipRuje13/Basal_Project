@@ -36,6 +36,39 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-end gap-2">
+          <div class="btn-group" role="group">
+            <button
+              id="btnExportar"
+              type="button"
+              class="btn btn-outline-primary dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <i class="bi bi-download"></i> Exportar
+            </button>
+
+            <div
+              id="menuExportar"
+              class="dropdown-menu dropdown-menu-end"
+              aria-labelledby="btnExportar"
+            >
+              <button
+                class="dropdown-item"
+                type="button"
+                data-formato="excel"
+              >
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+              </button>
+              <button
+                class="dropdown-item"
+                type="button"
+                data-formato="pdf"
+              >
+                <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+              </button>
+            </div>
+          </div>
+
           <button id="btnAgregar" type="button" class="btn btn-success">
             Agregar
           </button>
@@ -104,6 +137,7 @@
               <th scope="col">Unidad Negocio</th>
               <th scope="col">Colaborador</th>
               <th scope="col">Fecha Solicitud</th>
+              <th scope="col">Mes Cotización</th>
               <th scope="col">Estatus</th>
               <th scope="col">Código</th>
               <th scope="col">Notas</th>
@@ -115,6 +149,18 @@
             <!-- Filas generadas dinámicamente desde compras.js -->
           </tbody>
         </table>
+      </div>
+
+      <div
+        class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3"
+      >
+        <small id="comprasPaginacionInfo" class="text-muted"></small>
+
+        <nav aria-label="Paginación de compras">
+          <ul id="comprasPaginacion" class="pagination pagination-sm mb-0">
+            <!-- Botones de paginación generados desde compras.js -->
+          </ul>
+        </nav>
       </div>
     </div>
   </div>
@@ -175,6 +221,7 @@
               <option>Administración XPD</option>
               <option>Análisis de Negocio</option>
               <option>Asesoría</option>
+              <option>Atención a Clientes</option>
               <option>Auditoría-Contabilidad 3</option>
               <option>Contabilidad 1</option>
               <option>Contabilidad 2</option>
@@ -229,6 +276,29 @@
             </label>
 
             <input type="date" class="form-control" id="requestDate" required />
+          </div>
+
+          <div class="mb-3">
+            <label for="cotizacion" class="form-label">
+              Mes de Cotización
+            </label>
+
+            <select class="form-select" id="cotizacion" required>
+              <option value="" selected disabled>Seleccione un mes</option>
+
+              <option>Enero</option>
+              <option>Febrero</option>
+              <option>Marzo</option>
+              <option>Abril</option>
+              <option>Mayo</option>
+              <option>Junio</option>
+              <option>Julio</option>
+              <option>Agosto</option>
+              <option>Septiembre</option>
+              <option>Octubre</option>
+              <option>Noviembre</option>
+              <option>Diciembre</option>
+            </select>
           </div>
 
           <div class="mb-3">

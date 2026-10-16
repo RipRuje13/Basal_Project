@@ -38,6 +38,29 @@
     const navbarMount = document.getElementById("navbarMount");
     if (navbarMount) navbarMount.innerHTML = navbarHtml;
 
+    // Resaltar la opción del menú correspondiente a la página actual
+    const navIdMap = {
+      dashboard: "navDashboard",
+      compras: "navCompras",
+      equipos: "navEquipos",
+      almacen: "navAlmacen",
+      reportes: "navReportes",
+    };
+
+    if (navbarMount) {
+      // Quitar "active" de todos los enlaces del navbar
+      navbarMount
+        .querySelectorAll(".nav-link.active")
+        .forEach((el) => el.classList.remove("active"));
+
+      // Marcar como activo el enlace de la página actual
+      const activeNavId = navIdMap[page];
+      if (activeNavId) {
+        const activeLink = navbarMount.querySelector(`#${activeNavId}`);
+        if (activeLink) activeLink.classList.add("active");
+      }
+    }
+
     // 2) contenido
     const contentUrlMap = {
       dashboard: "../partials/dashboard-fragment.html",

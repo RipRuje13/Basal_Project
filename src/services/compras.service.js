@@ -2,7 +2,83 @@ const { getConnection } = require('../database/connection');
 
 const db = getConnection();
 
-function obtenerCompras() {
+function run(sql, params = []) {
+
+    return new Promise((resolve, reject) => {
+
+        db.run(sql, params, function (err) {
+
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve({
+                success: true,
+                id: this.lastID,
+                changes: this.changes
+            });
+
+        });
+
+    });
+
+}
+
+function all(sql, params = []) {
+
+    return new Promise((resolve, reject) => {
+
+        db.all(sql, params, (err, rows) => {
+
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve(rows);
+
+        });
+
+    });
+
+}
+
+async function inicializarCompras() {
+
+    await run(`
+        CREATE TABLE IF NOT EXISTS comprasdb (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cantidad INTEGER,
+            producto TEXT,
+            departamento TEXT,
+            unidad_negocio TEXT,
+            colaborador TEXT,
+            fecha_solicitud TEXT,
+            cotizacion TEXT,
+            estatus TEXT,
+            codigo TEXT,
+            notas TEXT
+        )
+    `);
+
+    // Migración: agregar la columna "cotizacion" a bases de datos existentes.
+    const columnas = await all('PRAGMA table_info(comprasdb)');
+    const tieneCotizacion = columnas.some(
+        (columna) => columna.name === 'cotizacion'
+    );
+
+    if (!tieneCotizacion) {
+        await run('ALTER TABLE comprasdb ADD COLUMN cotizacion TEXT');
+    }
+
+}
+
+const initPromise = inicializarCompras();
+
+async function obtenerCompras() {
+
+    await initPromise;
 
     return new Promise((resolve, reject) => {
 
@@ -15,6 +91,7 @@ function obtenerCompras() {
                 unidad_negocio,
                 colaborador,
                 fecha_solicitud,
+                cotizacion,
                 estatus,
                 codigo,
                 notas
@@ -37,7 +114,9 @@ function obtenerCompras() {
 
 }
 
-function obtenerCompraPorId(id) {
+async function obtenerCompraPorId(id) {
+
+    await initPromise;
 
     return new Promise((resolve, reject) => {
 
@@ -62,7 +141,9 @@ function obtenerCompraPorId(id) {
 
 }
 
-function guardarCompra(datos) {
+async function guardarCompra(datos) {
+
+    await initPromise;
 
     return new Promise((resolve, reject) => {
 
@@ -74,11 +155,12 @@ function guardarCompra(datos) {
                 unidad_negocio,
                 colaborador,
                 fecha_solicitud,
+                cotizacion,
                 estatus,
                 codigo,
                 notas
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const params = [
@@ -88,6 +170,7 @@ function guardarCompra(datos) {
             datos.unidad_negocio,
             datos.colaborador,
             datos.fecha_solicitud,
+            datos.cotizacion,
             datos.estatus,
             datos.codigo,
             datos.notas
@@ -112,10 +195,12 @@ function guardarCompra(datos) {
         );
 
     });
-console.log("entro a la funcion guardar")
+
 }
 
-function actualizarCompra(id, datos) {
+async function actualizarCompra(id, datos) {
+
+    await initPromise;
 
     return new Promise((resolve, reject) => {
 
@@ -128,6 +213,7 @@ function actualizarCompra(id, datos) {
                 unidad_negocio = ?,
                 colaborador = ?,
                 fecha_solicitud = ?,
+                cotizacion = ?,
                 estatus = ?,
                 codigo = ?,
                 notas = ?
@@ -141,6 +227,7 @@ function actualizarCompra(id, datos) {
             datos.unidad_negocio,
             datos.colaborador,
             datos.fecha_solicitud,
+            datos.cotizacion,
             datos.estatus,
             datos.codigo,
             datos.notas,
@@ -169,7 +256,9 @@ function actualizarCompra(id, datos) {
 
 }
 
-function eliminarCompra(id) {
+async function eliminarCompra(id) {
+
+    await initPromise;
 
     return new Promise((resolve, reject) => {
 
