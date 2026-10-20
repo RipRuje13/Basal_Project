@@ -1,4 +1,5 @@
 const comprasService = require('../../services/compras.service');
+const gestionService = require('../../services/gestion.service');
 
 // ================================
 // COMPRAS
@@ -192,6 +193,70 @@ function llenarSelectFiltro(select, valores, textoInicial) {
     select.value = valores.includes(valorActual)
         ? valorActual
         : '';
+
+}
+
+async function cargarSelectsFormulario() {
+
+    const selectDepartamento =
+        document.getElementById('department');
+
+    const selectUnidad =
+        document.getElementById('businessUnit');
+
+    try {
+
+        const departamentos =
+            await gestionService.obtenerDepartamentos();
+
+        if (selectDepartamento) {
+
+            selectDepartamento.innerHTML =
+                '<option value="" selected disabled>Seleccione un departamento</option>';
+
+            departamentos.forEach((fila) => {
+
+                const option =
+                    document.createElement('option');
+
+                option.value = fila.nombre;
+                option.textContent = fila.nombre;
+                selectDepartamento.appendChild(option);
+
+            });
+
+        }
+
+        const unidades =
+            await gestionService.obtenerUnidades();
+
+        if (selectUnidad) {
+
+            selectUnidad.innerHTML =
+                '<option value="" selected disabled>Seleccione una unidad</option>';
+
+            unidades.forEach((fila) => {
+
+                const option =
+                    document.createElement('option');
+
+                option.value = fila.nombre;
+                option.textContent = fila.nombre;
+                selectUnidad.appendChild(option);
+
+            });
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            'Error cargando selects del formulario de compras:',
+            error
+        );
+
+    }
 
 }
 
@@ -1256,7 +1321,12 @@ purchaseForm.addEventListener(
 
 construirMenuMeses();
 
-cargarCompras();
+// Poblar los selects del formulario desde la BD antes de cargar los
+// datos, de modo que al abrir el modal de edicion el valor existente
+// ya tenga su <option> disponible para seleccionarse.
+cargarSelectsFormulario().then(() => {
+    cargarCompras();
+});
 
 return true;
 

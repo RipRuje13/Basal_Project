@@ -1,6 +1,7 @@
 const { webUtils } = require('electron');
 const { pathToFileURL } = require('url');
 const almacenService = require('../../services/almacen.service');
+const gestionService = require('../../services/gestion.service');
 
 function initAlmacen() {
     const almacenForm = document.getElementById('almacenForm');
@@ -98,6 +99,31 @@ function initAlmacen() {
         select.value = valores.includes(valorActual)
             ? valorActual
             : '';
+    }
+
+    async function cargarDepartamentosFormulario() {
+        const select = document.getElementById('almacenDepartamento');
+        if (!select) return;
+
+        try {
+            const departamentos = await gestionService.obtenerDepartamentos();
+
+            select.innerHTML =
+                '<option value="" selected disabled>Seleccione un departamento</option>';
+
+            departamentos.forEach((fila) => {
+                const option = document.createElement('option');
+                option.value = fila.nombre;
+                option.textContent = fila.nombre;
+                select.appendChild(option);
+            });
+        }
+        catch (error) {
+            console.error(
+                'Error cargando departamentos del formulario de almacen:',
+                error
+            );
+        }
     }
 
     function crearInfoMes(fechaRaw) {
@@ -828,7 +854,13 @@ function initAlmacen() {
         }
     });
 
-    cargarAlmacen();
+    // Poblar el select de departamento desde la BD antes de cargar los
+    // datos, de modo que al abrir el modal de edicion el valor existente
+    // ya tenga su <option> disponible para seleccionarse.
+    cargarDepartamentosFormulario().then(() => {
+        cargarAlmacen();
+    });
+
     return true;
 }
 

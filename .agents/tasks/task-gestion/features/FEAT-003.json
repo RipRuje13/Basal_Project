@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "refactor",
+  "description": "Hacer que los selects del FORMULARIO de alta/edición de Compras (#department, #businessUnit) y de Almacén (#almacenDepartamento) se llenen dinámicamente desde gestion.service en lugar de tener <option> fijos en el HTML. Depende de FEAT-001 (consume gestion.service). Es independiente de FEAT-002. NO tocar los selects de FILTRO (filtroComprasDepartamento, filtroComprasUnidad, filtroAlmacenDepartamento) ni #almacenUbicacion/#almacenFunciona/#cotizacion/#status.",
+  "status": "completed",
+  "steps": [
+    "En src/ui/js/compras.js: junto a `const comprasService = require('../../services/compras.service');` añadir `const gestionService = require('../../services/gestion.service');`.",
+    "En compras.js, dentro de initCompras(), añadir una función async cargarSelectsFormulario() que llame a gestionService.obtenerDepartamentos() y gestionService.obtenerUnidades(), y llene #department y #businessUnit. Para cada select: conservar como primera opción el placeholder existente (`<option value=\"\" selected disabled>Seleccione un departamento</option>` / `Seleccione una unidad`) y luego añadir una <option> por cada fila usando fila.nombre tanto en value como en textContent. Envolver en try/catch con console.error.",
+    "En compras.js, invocar `await cargarSelectsFormulario()` en la carga inicial ANTES de `cargarCompras()` (o al menos antes de cualquier apertura de modal). Como setModoEditarCompra asigna document.getElementById('department').value y ('businessUnit').value a partir del registro, y los selects ya estarán poblados desde el init, el valor existente se seleccionará correctamente; verificar que el orden garantiza las opciones presentes antes de editar.",
+    "En src/ui/partials/compras-fragment.html: en el <select id=\"department\"> eliminar las 21 <option> fijas dejando SOLO `<option value=\"\" selected disabled>Seleccione un departamento</option>`. En el <select id=\"businessUnit\"> eliminar las 3 <option> fijas dejando SOLO `<option value=\"\" selected disabled>Seleccione una unidad</option>`. No tocar #cotizacion, #status ni los selects de filtro.",
+    "En src/ui/js/almacen.js: añadir `const gestionService = require('../../services/gestion.service');` junto al require de almacen.service. Dentro de initAlmacen() añadir una función (p.ej. cargarDepartamentosFormulario()) que llene #almacenDepartamento desde gestionService.obtenerDepartamentos(), conservando el placeholder `<option value=\"\" selected disabled>Seleccione un departamento</option>` y añadiendo una <option> por fila (nombre en value y texto). Invocarla dentro de initAlmacen() antes de cargarAlmacen(). setModoEditar asigna #almacenDepartamento.value desde el registro, por lo que debe ejecutarse con las opciones ya cargadas.",
+    "En src/ui/partials/almacen-fragment.html: en el <select id=\"almacenDepartamento\"> eliminar las <option> fijas (sin acento) dejando SOLO `<option value=\"\" selected disabled>Seleccione un departamento</option>`. NO tocar #almacenUbicacion, #almacenFunciona ni filtroAlmacenDepartamento.",
+    "Verificar sintaxis con node --check de compras.js y almacen.js."
+  ],
+  "acceptance_criteria": [
+    "`node --check src/ui/js/compras.js` y `node --check src/ui/js/almacen.js` pasan sin errores.",
+    "compras.js y almacen.js requieren gestion.service y poblan respectivamente (#department + #businessUnit) y (#almacenDepartamento) desde la BD durante la inicialización, conservando la primera opción placeholder deshabilitada.",
+    "compras-fragment.html ya no contiene las <option> fijas de #department ni de #businessUnit (solo el placeholder); los selects de filtro y #cotizacion/#status quedan intactos.",
+    "almacen-fragment.html ya no contiene las <option> fijas de #almacenDepartamento (solo el placeholder); #almacenUbicacion, #almacenFunciona y filtroAlmacenDepartamento quedan intactos.",
+    "La carga de selects ocurre antes de la carga de datos, de modo que al abrir el modal de edición el valor existente se selecciona correctamente."
+  ],
+  "verification": [
+    "node --check src/ui/js/compras.js",
+    "node --check src/ui/js/almacen.js",
+    "grep/inspección del diff: confirmar require de gestion.service en ambos .js; confirmar que en compras-fragment.html los selects #department y #businessUnit solo conservan el placeholder; confirmar que en almacen-fragment.html #almacenDepartamento solo conserva el placeholder y que #almacenUbicacion sigue con sus opciones"
+  ],
+  "blocked_reason": null,
+  "findings": "compras.js: require de gestion.service agregado; cargarSelectsFormulario() llena #department (obtenerDepartamentos) y #businessUnit (obtenerUnidades) conservando los placeholders; se invoca en la carga inicial encadenado con .then() de modo que cargarCompras() corre despues de poblar los selects (garantiza opciones presentes antes de que setModoEditarCompra asigne .value al editar). almacen.js: require de gestion.service agregado; cargarDepartamentosFormulario() llena #almacenDepartamento (obtenerDepartamentos) conservando el placeholder; se invoca al final de initAlmacen encadenado con .then() antes de cargarAlmacen(). compras-fragment.html: eliminadas las 21 <option> fijas de #department y las 3 de #businessUnit, solo queda el placeholder; #cotizacion, #status y los selects de filtro intactos. almacen-fragment.html: eliminadas las 20 <option> fijas (sin acento) de #almacenDepartamento, solo queda el placeholder; #almacenUbicacion, #almacenFunciona y filtroAlmacenDepartamento intactos. Efecto visible aceptado (ya documentado en context.json seed_discrepancy_note): el select de almacen ahora muestra los nombres de departamento CON acento provenientes del seed de la BD, en lugar de las variantes sin acento que tenia el HTML. node --check paso en ambos .js."
+}
