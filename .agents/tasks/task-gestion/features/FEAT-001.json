@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Crear el servicio de datos src/services/gestion.service.js con dos tablas SQLite (departamentos, unidades_negocio), seed idempotente desde los valores literales del HTML, y CRUD completo para ambas entidades. Base de la que dependen FEAT-002 y FEAT-003. Sigue EXACTAMENTE el patrón y estilo de src/services/compras.service.js (ver context.json).",
+  "status": "completed",
+  "steps": [
+    "Crear src/services/gestion.service.js. Encabezado idéntico al de compras.service.js: `const { getConnection } = require('../database/connection');` y `const db = getConnection();`.",
+    "Definir helpers `run(sql, params = [])` y `all(sql, params = [])` que envuelven db.run/db.all en Promesas (reject(err) en error; run resuelve {success, id:this.lastID, changes:this.changes}), copiando el estilo de compras.service.js (4 espacios, espaciado vertical).",
+    "Definir `async function inicializarGestion()`: `CREATE TABLE IF NOT EXISTS departamentos (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE)` y lo mismo para `unidades_negocio`. Luego, para cada tabla, si `SELECT COUNT(*) AS total` es 0, insertar el seed con `INSERT OR IGNORE INTO ... (nombre) VALUES (?)` por cada valor. Usar los arrays literales de context.json: seed_departamentos_literal (21 valores, incluye 'Atención a Clientes', con acentos exactos) y seed_unidades_literal (Basal Capital, XPD, HELP AI).",
+    "A nivel de módulo: `const initPromise = inicializarGestion();`.",
+    "Implementar funciones públicas, todas con `await initPromise` al inicio y devolviendo Promesa, siguiendo el estilo de compras.service.js: `obtenerDepartamentos()` -> `SELECT id, nombre FROM departamentos ORDER BY nombre ASC`; `crearDepartamento(nombre)`, `actualizarDepartamento(id, nombre)`, `eliminarDepartamento(id)`; y las equivalentes de unidades sobre la tabla unidades_negocio: `obtenerUnidades()`, `crearUnidad(nombre)`, `actualizarUnidad(id, nombre)`, `eliminarUnidad(id)`.",
+    "En crear/actualizar: hacer trim() del nombre; si queda vacío, `reject(new Error('El nombre no puede estar vacío.'))`. En el callback de error de db.run, si el error corresponde a la restricción UNIQUE (err.code === 'SQLITE_CONSTRAINT' o /UNIQUE/ en err.message), `reject(new Error('Ya existe un registro con ese nombre.'))`; en otro caso reject(err).",
+    "Terminar con `module.exports = { obtenerDepartamentos, crearDepartamento, actualizarDepartamento, eliminarDepartamento, obtenerUnidades, crearUnidad, actualizarUnidad, eliminarUnidad };`.",
+    "Crear script temporal en la raíz _verify_gestion.js que `require('./src/services/gestion.service')` y pruebe de forma async: (a) obtenerDepartamentos() devuelve 21 filas ordenadas ASC y obtenerUnidades() 3; (b) crearDepartamento('ZZZ Prueba Gestion') funciona; (c) crear el mismo nombre otra vez rechaza con mensaje 'Ya existe un registro con ese nombre.'; (d) crearDepartamento('   ') (vacío tras trim) rechaza con 'El nombre no puede estar vacío.'; (e) actualizarDepartamento(id, 'ZZZ Prueba Gestion 2') cambia; (f) eliminarDepartamento(id) borra; (g) versión abreviada equivalente para unidades (crear/duplicado/eliminar). Al final, SIEMPRE limpiar cualquier fila de prueba creada (eliminar por nombre 'ZZZ%'), imprimir un resumen OK por caso y hacer process.exit(0) en éxito o process.exit(1) ante cualquier fallo. Ejecutarlo con `node _verify_gestion.js` y DESPUÉS borrarlo (Remove-Item _verify_gestion.js). No commitear _verify_gestion.js."
+  ],
+  "acceptance_criteria": [
+    "`node --check src/services/gestion.service.js` pasa sin errores de sintaxis.",
+    "Ejecutar `node _verify_gestion.js` imprime OK de todos los casos (seed 21/3, crear, duplicado rechazado con 'Ya existe un registro con ese nombre.', vacío rechazado, actualizar, eliminar, y el ciclo de unidades) y sale con código 0.",
+    "Tras la ejecución no quedan filas de prueba en las tablas (el script las limpia) y _verify_gestion.js ha sido borrado (no aparece en git status).",
+    "El servicio expone las 8 funciones del CRUD vía module.exports y respeta el patrón initPromise/await de compras.service.js.",
+    "No se agregaron dependencias npm (package.json sin cambios)."
+  ],
+  "verification": [
+    "node --check src/services/gestion.service.js",
+    "node _verify_gestion.js  (debe salir con código 0; revisar la salida imprime OK por caso)",
+    "Remove-Item _verify_gestion.js  y confirmar con git status que no queda rastreado",
+    "git status --short  (no debe listar package.json ni node_modules como modificados por este FEAT)"
+  ],
+  "blocked_reason": null,
+  "findings": "src/services/gestion.service.js creado siguiendo el patrón de compras.service.js (helpers run/all en Promesas, inicializarGestion() con CREATE TABLE IF NOT EXISTS + seed idempotente solo si COUNT(*)=0, initPromise a nivel de módulo, cada función pública hace await initPromise). Tablas: departamentos y unidades_negocio, ambas con columnas (id INTEGER PK AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE). Seed confirmado por la verificación: 21 departamentos (incluye 'Atención a Clientes', acentos exactos del HTML) y 3 unidades ('Basal Capital', 'XPD', 'HELP AI'). Las 8 funciones exportadas vía module.exports (nombres exactos): obtenerDepartamentos, crearDepartamento, actualizarDepartamento, eliminarDepartamento, obtenerUnidades, crearUnidad, actualizarUnidad, eliminarUnidad. obtener* devuelven filas {id, nombre} ordenadas por nombre ASC. crear/actualizar hacen trim() y rechazan vacío con Error('El nombre no puede estar vacío.') y duplicado UNIQUE con Error('Ya existe un registro con ese nombre.'). crear* resuelve {success, id}; actualizar*/eliminar* resuelve {success, changes}. node --check OK y node _verify_gestion.js salió 0 con OK en todos los casos; script temporal borrado. No se agregaron dependencias npm."
+}
