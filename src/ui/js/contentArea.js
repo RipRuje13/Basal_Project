@@ -20,6 +20,7 @@
     if (page === "almacen.html") return "almacen";
     if (page === "reportes.html") return "reportes";
     if (page === "gestion.html") return "gestion";
+    if (page === "calendarios.html") return "calendarios";
     return "dashboard";
   }
 
@@ -30,6 +31,7 @@
     almacen: "Almacén",
     reportes: "Reportes",
     gestion: "Gestión",
+    calendarios: "Calendarios",
   };
 
   async function bootstrapContent() {
@@ -48,6 +50,7 @@
       almacen: "navAlmacen",
       reportes: "navReportes",
       gestion: "navGestion",
+      calendarios: "navCalendarios",
     };
 
     if (navbarMount) {
@@ -72,6 +75,7 @@
       almacen: "../partials/almacen-fragment.html",
       reportes: "../partials/reportes-fragment.html",
       gestion: "../partials/gestion-fragment.html",
+      calendarios: "../partials/calendarios-fragment.html",
     };
 
     const contentMount = document.getElementById("contentArea");

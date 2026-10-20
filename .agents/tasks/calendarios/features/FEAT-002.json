@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Navbar + ruteo de la nueva página Calendarios. Renombra el item 'Another action' del dropdown 'Herramientas' a 'Calendarios' y agrega la clave 'calendarios' en los 4 mapas de contentArea.js para que la página cargue su fragmento, título y resaltado. Pequeña pero prerequisito de FEAT-003 (la página no es navegable sin esto). Ver §2 y §3 del diseño.",
+  "status": "completed",
+  "steps": [
+    "En src/ui/partials/navbar.html, reemplazar EXACTAMENTE la línea `<a class=\"dropdown-item\" href=\"#\">Another action</a>` por `<a class=\"dropdown-item\" id=\"navCalendarios\" href=\"./calendarios.html\">Calendarios</a>`. No tocar los demás items del dropdown ('Gestión', 'Something else here', dropdown-divider, 'Separated link') ni la estructura Bootstrap.",
+    "En src/ui/js/contentArea.js, dentro de getPageFromLocation(), agregar junto a los otros if: `if (page === \"calendarios.html\") return \"calendarios\";` (estilo de 2 espacios del archivo).",
+    "En el objeto titleMap de contentArea.js, agregar la entrada `calendarios: \"Calendarios\",`.",
+    "En el objeto navIdMap (dentro de bootstrapContent) de contentArea.js, agregar `calendarios: \"navCalendarios\",`.",
+    "En el objeto contentUrlMap de contentArea.js, agregar `calendarios: \"../partials/calendarios-fragment.html\",`.",
+    "Commit local: feat(calendarios): navbar y ruteo. NO hacer push."
+  ],
+  "acceptance_criteria": [
+    "`node --check src/ui/js/contentArea.js` termina con exit 0.",
+    "navbar.html contiene exactamente un item con id=\"navCalendarios\" apuntando a ./calendarios.html y el resto de items del dropdown quedan intactos.",
+    "contentArea.js tiene la clave 'calendarios' en los 4 puntos (getPageFromLocation, titleMap, navIdMap, contentUrlMap)."
+  ],
+  "verification": [
+    "node --check src/ui/js/contentArea.js  (espera exit 0)"
+  ],
+  "blocked_reason": null,
+  "findings": "navbar.html: reemplazado el item 'Another action' (href=#) por '<a class=\"dropdown-item\" id=\"navCalendarios\" href=\"./calendarios.html\">Calendarios</a>'; resto del dropdown (Gestión, Something else here, dropdown-divider, Separated link) intacto. contentArea.js: agregada la clave 'calendarios' en los 4 mapas: getPageFromLocation() ('if (page === \"calendarios.html\") return \"calendarios\";'), titleMap ('calendarios: \"Calendarios\"'), navIdMap dentro de bootstrapContent ('calendarios: \"navCalendarios\"') y contentUrlMap ('calendarios: \"../partials/calendarios-fragment.html\"'). Verificación: node --check src/ui/js/contentArea.js -> exit 0. No se tocó package.json ni package-lock.json. El fragmento ../partials/calendarios-fragment.html y la página calendarios.html todavía no existen (los crean FEAT posteriores); la ruta queda cableada."
+}
