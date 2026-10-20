@@ -1,0 +1,27 @@
+/* ================================
+   Scroll global de la ventana
+   Muestra la barra de desplazamiento cuando el contenido
+   no cabe en el tamano actual de la ventana.
+   ================================ */
+html,
+body {
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Separacion entre las tarjetas de calendarios */
+.card {
+    margin-bottom: 1rem;
+}
+
+/* Muestra visual de color, usada en el selector y en la celda "Color" */
+.muestra-color {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #adb5bd;
+    vertical-align: middle;
+    margin-right: 0.35rem;
+}
