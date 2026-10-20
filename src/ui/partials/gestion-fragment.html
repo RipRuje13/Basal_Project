@@ -1,0 +1,77 @@
+<div class="container-fluid mt-4">
+
+    <h3 class="mb-4" id="pageTitle">Gestión</h3>
+
+    <!-- ================================
+         Card: Departamentos
+         ================================ -->
+    <div class="card border-secondary mb-3">
+
+        <div class="card-header">
+            <div class="input-group">
+                <input
+                    id="inputNuevoDepartamento"
+                    class="form-control"
+                    type="text"
+                    placeholder="Nuevo departamento" />
+                <button
+                    id="btnAgregarDepartamento"
+                    class="btn btn-success"
+                    type="button">
+                    Agregar
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <table id="tablaDepartamentos" class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th class="text-end"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- ================================
+         Card: Unidades de Negocio
+         ================================ -->
+    <div class="card border-secondary mb-3">
+
+        <div class="card-header">
+            <div class="input-group">
+                <input
+                    id="inputNuevaUnidad"
+                    class="form-control"
+                    type="text"
+                    placeholder="Nueva unidad de negocio" />
+                <button
+                    id="btnAgregarUnidad"
+                    class="btn btn-success"
+                    type="button">
+                    Agregar
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <table id="tablaUnidades" class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th class="text-end"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="../js/gestion.js"></script>

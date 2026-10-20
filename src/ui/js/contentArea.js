@@ -19,6 +19,7 @@
     if (page === "equipos.html") return "equipos";
     if (page === "almacen.html") return "almacen";
     if (page === "reportes.html") return "reportes";
+    if (page === "gestion.html") return "gestion";
     return "dashboard";
   }
 
@@ -28,6 +29,7 @@
     equipos: "Equipos",
     almacen: "Almacén",
     reportes: "Reportes",
+    gestion: "Gestión",
   };
 
   async function bootstrapContent() {
@@ -45,6 +47,7 @@
       equipos: "navEquipos",
       almacen: "navAlmacen",
       reportes: "navReportes",
+      gestion: "navGestion",
     };
 
     if (navbarMount) {
@@ -68,6 +71,7 @@
       equipos: "../partials/equipos-fragment.html",
       almacen: "../partials/almacen-fragment.html",
       reportes: "../partials/reportes-fragment.html",
+      gestion: "../partials/gestion-fragment.html",
     };
 
     const contentMount = document.getElementById("contentArea");

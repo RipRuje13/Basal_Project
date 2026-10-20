@@ -1,0 +1,16 @@
+/* ================================
+   Scroll global de la ventana
+   Muestra la barra de desplazamiento cuando el contenido
+   no cabe en el tamano actual de la ventana.
+   ================================ */
+html,
+body {
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Separacion entre las tarjetas de administracion */
+.card {
+    margin-bottom: 1rem;
+}
