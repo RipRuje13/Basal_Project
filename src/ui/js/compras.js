@@ -77,7 +77,14 @@ let paginaActualCompras = 1;
 // FUNCIONES AUXILIARES
 // =====================================
 
-function getFilaClassPorEstatus(estatusRaw) {
+// Color FIJO de fondo de fila por estatus (hex inline), independiente del
+// tema. Tonos claros para que el texto siga siendo legible:
+//   Por Solicitar -> gris claro   (aún sin iniciar)
+//   Solicitado    -> azul claro   (en trámite)
+//   Aprobado      -> ámbar claro  (en proceso)
+//   Entregado     -> verde claro  (completado)
+//   Cancelado     -> rojo claro   (cancelado)
+function getColorSemaforo(estatusRaw) {
 
     const estatus =
         (estatusRaw ?? '')
@@ -85,23 +92,13 @@ function getFilaClassPorEstatus(estatusRaw) {
             .trim()
             .toUpperCase();
 
-    if (estatus === 'POR SOLICITAR') {
-        return 'table-info';
-    }
+    if (estatus === 'POR SOLICITAR') return '#e5e7eb';
+    if (estatus === 'SOLICITADO') return '#cfe2ff';
+    if (estatus === 'APROBADO') return '#ffe8a3';
+    if (estatus === 'ENTREGADO') return '#c6f6d5';
+    if (estatus === 'CANCELADO') return '#fecaca';
 
-    if (estatus === 'APROBADO') {
-        return 'table-warning';
-    }
-
-    if (estatus === 'ENTREGADO') {
-        return 'table-success';
-    }
-
-    if (estatus === 'CANCELADO') {
-        return 'table-dark';
-    }
-
-    return '';
+    return 'transparent';
 }
 
 function setModoNuevaCompra() {
@@ -1119,13 +1116,19 @@ function renderCompras(rows) {
         const tr =
             document.createElement('tr');
 
-        const clase =
-            getFilaClassPorEstatus(
-                compra.estatus
-            );
+        // Color FIJO de la fila según el estatus (independiente del tema).
+        // Se usa la variable --bs-table-bg que Bootstrap aplica a las celdas,
+        // de modo que toda la fila queda pintada con el color del estatus.
+        const colorFila =
+            getColorSemaforo(compra.estatus);
 
-        if (clase) {
-            tr.classList.add(clase);
+        if (colorFila && colorFila !== 'transparent') {
+            tr.style.setProperty('--bs-table-bg', colorFila);
+            tr.style.setProperty('--bs-table-accent-bg', colorFila);
+            // Texto oscuro para legibilidad sobre el fondo claro, sin importar
+            // el tema (p. ej. el tema oscuro usaría texto claro por defecto).
+            tr.style.setProperty('--bs-table-color', '#212529');
+            tr.style.color = '#212529';
         }
 
         tr.innerHTML = `
