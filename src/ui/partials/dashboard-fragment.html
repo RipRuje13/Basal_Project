@@ -1,5 +1,5 @@
 
-<div class="container-fluid mt-4" id="dashboardRoot">
+<div class="container-fluid py-4" id="dashboardRoot">
 
     <h3 id="pageTitle" class="mb-4">Dashboard</h3>
 
@@ -47,7 +47,7 @@
 
         <div class="col-lg-8">
             <div id="chartCard" class="card">
-                <div class="card-header">Gráfica por Departamento</div>
+                <div class="card-header">Inactivos, Averiados y Cajas por departamento</div>
                 <div class="card-body">
                     <div class="reporte-chart-wrapper">
                         <canvas id="departmentChart"></canvas>
@@ -69,8 +69,12 @@
 
     <div class="row mt-4" id="dashboardCalendarios">
         <div class="col-12">
-            <h4 class="mb-3">Calendarios</h4>
-            <div class="row g-3" id="calendariosDashboardRoot"></div>
+            <div class="card">
+                <div class="card-header">Calendarios</div>
+                <div class="card-body">
+                    <div class="row g-3" id="calendariosDashboardRoot"></div>
+                </div>
+            </div>
         </div>
     </div>
 

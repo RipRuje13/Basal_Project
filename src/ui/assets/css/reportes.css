@@ -82,3 +82,25 @@ body {
     color: #1f3c88;
     font-weight: 600;
 }
+
+/* ================================
+   Calendarios en Inicio (dashboard)
+   Celdas compactas y legibles para la vista mensual.
+   ================================ */
+#calendariosDashboardRoot .table {
+    table-layout: fixed;
+}
+
+#calendariosDashboardRoot .table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem;
+    color: #1f3c88;
+}
+
+#calendariosDashboardRoot .table td {
+    height: 2.25rem;
+    padding: 0.25rem;
+    vertical-align: middle;
+    font-size: 0.85rem;
+}

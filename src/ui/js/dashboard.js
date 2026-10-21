@@ -239,33 +239,77 @@
         setKpi('totalEquiposInactivos', totalEquiposInactivos);
         setKpi('totalEquiposAveriados', totalEquiposAveriados);
 
-        // ---------- GRAFICA: productos de almacen por departamento ----------
+        // ---------- GRAFICA: Inactivos / Averiado / Cajas por departamento ----------
+        // Tres series agrupadas por departamento:
+        //   Inactivos = funciona == 'si'
+        //   Averiado  = funciona == 'no'
+        //   Cajas     = el campo producto contiene 'caja' (sin distinguir mayus/minus)
         if (chartDisponible) {
-            const inventarioDept = ordenarMapa(
-                contarPor(
-                    productos,
+
+            // Departamentos presentes (orden alfabetico), 'Sin departamento' si falta.
+            const departamentos = [...new Set(
+                productos.map(
                     (p) => (p.departamento ?? '').toString().trim() || 'Sin departamento'
-                ),
-                { orden: 'desc' }
+                )
+            )].sort();
+
+            const deptoDe = (p) =>
+                (p.departamento ?? '').toString().trim() || 'Sin departamento';
+
+            const esCaja = (p) =>
+                normalizar(p.producto).includes('caja');
+
+            const inactivosPorDepto = departamentos.map(
+                (depto) => productos.filter(
+                    (p) => deptoDe(p) === depto && normalizar(p.funciona) === 'si'
+                ).length
             );
+
+            const averiadoPorDepto = departamentos.map(
+                (depto) => productos.filter(
+                    (p) => deptoDe(p) === depto && normalizar(p.funciona) === 'no'
+                ).length
+            );
+
+            const cajasPorDepto = departamentos.map(
+                (depto) => productos.filter(
+                    (p) => deptoDe(p) === depto && esCaja(p)
+                ).length
+            );
+
             crearChart(
                 'departmentChart',
                 {
                     type: 'bar',
                     data: {
-                        labels: inventarioDept.labels,
-                        datasets: [{
-                            label: 'Productos',
-                            data: inventarioDept.data,
-                            backgroundColor: coloresPara(inventarioDept.labels.length)
-                        }]
+                        labels: departamentos,
+                        datasets: [
+                            {
+                                label: 'Inactivos',
+                                data: inactivosPorDepto,
+                                backgroundColor: '#1f3c88'
+                            },
+                            {
+                                label: 'Averiado',
+                                data: averiadoPorDepto,
+                                backgroundColor: '#e76f51'
+                            },
+                            {
+                                label: 'Cajas',
+                                data: cajasPorDepto,
+                                backgroundColor: '#c9a227'
+                            }
+                        ]
                     },
                     options: opcionesBase({
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
+                        plugins: { legend: { display: true, position: 'top' } },
+                        scales: {
+                            x: { stacked: false },
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
                     })
                 },
-                inventarioDept.labels.length > 0
+                departamentos.length > 0
             );
         }
 

@@ -36,6 +36,15 @@ const btnAgregarUnidad =
 const tablaUnidades =
     document.getElementById('tablaUnidades');
 
+const inputNuevaUbicacion =
+    document.getElementById('inputNuevaUbicacion');
+
+const btnAgregarUbicacion =
+    document.getElementById('btnAgregarUbicacion');
+
+const tablaUbicaciones =
+    document.getElementById('tablaUbicaciones');
+
 if (!tablaDepartamentos) {
     return false;
 }
@@ -48,6 +57,11 @@ const tbodyDepartamentos =
 const tbodyUnidades =
     tablaUnidades
         ? tablaUnidades.querySelector('tbody')
+        : null;
+
+const tbodyUbicaciones =
+    tablaUbicaciones
+        ? tablaUbicaciones.querySelector('tbody')
         : null;
 
 // =====================================
@@ -170,6 +184,64 @@ function renderUnidades(rows) {
 
 }
 
+function renderUbicaciones(rows) {
+
+    if (!tbodyUbicaciones) return;
+
+    tbodyUbicaciones.innerHTML = '';
+
+    if (!rows.length) {
+
+        tbodyUbicaciones.innerHTML = `
+            <tr>
+                <td colspan="2" class="text-center text-muted py-4">
+                    No hay ubicaciones registradas.
+                </td>
+            </tr>
+        `;
+
+        return;
+
+    }
+
+    rows.forEach((fila) => {
+
+        const tr =
+            document.createElement('tr');
+
+        tr.innerHTML = `
+            <td>${escaparHtml(fila.nombre)}</td>
+            <td class="text-end">
+
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary btn-editar-ubicacion"
+                    data-id="${fila.id}"
+                    title="Editar">
+
+                    <i class="bi bi-pencil-fill"></i>
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger btn-eliminar-ubicacion"
+                    data-id="${fila.id}"
+                    title="Eliminar">
+
+                    <i class="bi bi-trash-fill"></i>
+
+                </button>
+
+            </td>
+        `;
+
+        tbodyUbicaciones.appendChild(tr);
+
+    });
+
+}
+
 // =====================================
 // CARGAR
 // =====================================
@@ -209,6 +281,27 @@ async function cargarUnidades() {
 
         console.error(
             'Error cargando unidades:',
+            error
+        );
+
+    }
+
+}
+
+async function cargarUbicaciones() {
+
+    try {
+
+        const rows =
+            await gestionService.obtenerUbicaciones();
+
+        renderUbicaciones(rows);
+
+    }
+    catch (error) {
+
+        console.error(
+            'Error cargando ubicaciones:',
             error
         );
 
@@ -477,12 +570,185 @@ if (tbodyUnidades) {
 }
 
 // =====================================
+// UBICACIONES: AGREGAR / EDITAR / ELIMINAR
+// =====================================
+
+if (btnAgregarUbicacion) {
+
+    btnAgregarUbicacion.addEventListener(
+        'click',
+        async () => {
+
+            try {
+
+                const nombre =
+                    inputNuevaUbicacion
+                        ? inputNuevaUbicacion.value
+                        : '';
+
+                await gestionService.crearUbicacion(nombre);
+
+                if (inputNuevaUbicacion) {
+                    inputNuevaUbicacion.value = '';
+                }
+
+                await cargarUbicaciones();
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                alert(error.message);
+
+            }
+
+        }
+    );
+
+}
+
+if (tbodyUbicaciones) {
+
+    tbodyUbicaciones.addEventListener(
+        'click',
+        async (e) => {
+
+            const btnEditar =
+                e.target.closest('.btn-editar-ubicacion');
+
+            if (btnEditar) {
+
+                e.preventDefault();
+
+                try {
+
+                    const fila =
+                        btnEditar.closest('tr');
+
+                    const nombreActual =
+                        fila
+                            ? fila.querySelector('td').textContent.trim()
+                            : '';
+
+                    const nuevoNombre =
+                        prompt(
+                            'Nuevo nombre de la ubicación:',
+                            nombreActual
+                        );
+
+                    if (nuevoNombre === null) {
+                        return;
+                    }
+
+                    await gestionService.actualizarUbicacion(
+                        btnEditar.dataset.id,
+                        nuevoNombre
+                    );
+
+                    await cargarUbicaciones();
+
+                }
+                catch (error) {
+
+                    console.error(error);
+
+                    alert(error.message);
+
+                }
+
+                return;
+
+            }
+
+            const btnEliminar =
+                e.target.closest('.btn-eliminar-ubicacion');
+
+            if (btnEliminar) {
+
+                e.preventDefault();
+
+                const confirmado =
+                    confirm(
+                        '¿Estás seguro de que deseas eliminar esta ubicación?'
+                    );
+
+                if (!confirmado) return;
+
+                try {
+
+                    await gestionService.eliminarUbicacion(
+                        btnEliminar.dataset.id
+                    );
+
+                    await cargarUbicaciones();
+
+                }
+                catch (error) {
+
+                    console.error(error);
+
+                    alert(error.message);
+
+                }
+
+            }
+
+        }
+    );
+
+}
+
+// =====================================
+// EXPANDIR / OCULTAR TARJETAS
+// =====================================
+
+document.addEventListener('click', (e) => {
+
+    const btnToggle =
+        e.target.closest('.card-gestion .btn-toggle-card');
+
+    if (!btnToggle) return;
+
+    e.preventDefault();
+
+    const card =
+        btnToggle.closest('.card');
+
+    const body =
+        card ? card.querySelector('.card-body') : null;
+
+    if (!body) return;
+
+    const oculto =
+        body.style.display === 'none';
+
+    body.style.display = oculto ? '' : 'none';
+
+    btnToggle.setAttribute(
+        'aria-expanded',
+        oculto ? 'true' : 'false'
+    );
+
+    const icono = btnToggle.querySelector('i');
+
+    if (icono) {
+        icono.className = oculto
+            ? 'bi bi-chevron-up'
+            : 'bi bi-chevron-down';
+    }
+
+});
+
+// =====================================
 // CARGA INICIAL
 // =====================================
 
 cargarDepartamentos();
 
 cargarUnidades();
+
+cargarUbicaciones();
 
 return true;
 

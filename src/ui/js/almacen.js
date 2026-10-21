@@ -126,6 +126,31 @@ function initAlmacen() {
         }
     }
 
+    async function cargarUbicacionesFormulario() {
+        const select = document.getElementById('almacenUbicacion');
+        if (!select) return;
+
+        try {
+            const ubicaciones = await gestionService.obtenerUbicaciones();
+
+            select.innerHTML =
+                '<option value="" selected disabled>Seleccione la oficina</option>';
+
+            ubicaciones.forEach((fila) => {
+                const option = document.createElement('option');
+                option.value = fila.nombre;
+                option.textContent = fila.nombre;
+                select.appendChild(option);
+            });
+        }
+        catch (error) {
+            console.error(
+                'Error cargando ubicaciones del formulario de almacen:',
+                error
+            );
+        }
+    }
+
     function crearInfoMes(fechaRaw) {
         if (!fechaRaw) return null;
 
@@ -854,10 +879,13 @@ function initAlmacen() {
         }
     });
 
-    // Poblar el select de departamento desde la BD antes de cargar los
-    // datos, de modo que al abrir el modal de edicion el valor existente
-    // ya tenga su <option> disponible para seleccionarse.
-    cargarDepartamentosFormulario().then(() => {
+    // Poblar los selects de departamento y ubicacion desde la BD antes de
+    // cargar los datos, de modo que al abrir el modal de edicion el valor
+    // existente ya tenga su <option> disponible para seleccionarse.
+    Promise.all([
+        cargarDepartamentosFormulario(),
+        cargarUbicacionesFormulario()
+    ]).then(() => {
         cargarAlmacen();
     });
 

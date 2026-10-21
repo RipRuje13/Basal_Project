@@ -124,6 +124,53 @@ const seedColores = [
     { nombre: 'Morado', valor: '#6f42c1' }
 ];
 
+// Agrega la columna "origen" a motivos/colores si no existe y clasifica los
+// registros preexistentes: los que pertenecen a departamentos quedan marcados
+// como 'departamento'; el resto permanece 'usuario'.
+async function migrarColumnaOrigen() {
+
+    // 1) Asegurar que la columna "origen" exista en ambas tablas.
+    const colsMotivos = await all('PRAGMA table_info(motivos)');
+    if (!colsMotivos.some((c) => c.name === 'origen')) {
+        await run(
+            `ALTER TABLE motivos ADD COLUMN origen TEXT NOT NULL DEFAULT 'usuario'`
+        );
+    }
+
+    const colsColores = await all('PRAGMA table_info(colores)');
+    if (!colsColores.some((c) => c.name === 'origen')) {
+        await run(
+            `ALTER TABLE colores ADD COLUMN origen TEXT NOT NULL DEFAULT 'usuario'`
+        );
+    }
+
+    // 2) Clasificar orígenes (idempotente, se ejecuta siempre).
+    // Motivos de departamento: su nombre coincide con un departamento mapeado.
+    await run(`
+        UPDATE motivos
+        SET origen = 'departamento'
+        WHERE nombre IN (SELECT departamento FROM departamento_colores)
+    `);
+
+    // Colores referenciados por algún departamento -> 'departamento'...
+    await run(`
+        UPDATE colores
+        SET origen = 'departamento'
+        WHERE id IN (SELECT color_id FROM departamento_colores)
+    `);
+
+    // ...pero los 6 colores base SIEMPRE son de usuario (aunque un
+    // departamento los hubiera reutilizado antes de esta separación).
+    const valoresBase = seedColores.map((c) => c.valor);
+    const marcadores = valoresBase.map(() => '?').join(', ');
+
+    await run(
+        `UPDATE colores SET origen = 'usuario' WHERE valor IN (${marcadores})`,
+        valoresBase
+    );
+
+}
+
 async function inicializarCalendarios() {
 
     await run(`
@@ -138,7 +185,8 @@ async function inicializarCalendarios() {
     await run(`
         CREATE TABLE IF NOT EXISTS motivos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL UNIQUE
+            nombre TEXT NOT NULL UNIQUE,
+            origen TEXT NOT NULL DEFAULT 'usuario'
         )
     `);
 
@@ -146,7 +194,8 @@ async function inicializarCalendarios() {
         CREATE TABLE IF NOT EXISTS colores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL UNIQUE,
-            valor TEXT NOT NULL UNIQUE
+            valor TEXT NOT NULL UNIQUE,
+            origen TEXT NOT NULL DEFAULT 'usuario'
         )
     `);
 
@@ -159,6 +208,22 @@ async function inicializarCalendarios() {
             color_id INTEGER
         )
     `);
+
+    // Mapeo de color por departamento. Aplica SOLO al calendario de
+    // mantenimientos: cada departamento tiene un color asignado (editable).
+    await run(`
+        CREATE TABLE IF NOT EXISTS departamento_colores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            departamento TEXT NOT NULL UNIQUE,
+            color_id INTEGER NOT NULL
+        )
+    `);
+
+    // Migración: columna "origen" en motivos y colores (bases existentes).
+    // 'usuario'      -> creados por el usuario en la página de calendarios.
+    // 'departamento' -> generados automáticamente para mantenimientos.
+    // Los dos primeros calendarios solo muestran los de origen 'usuario'.
+    await migrarColumnaOrigen();
 
     // Seed de calendarios: idempotente por el UNIQUE de clave. La descripción
     // arranca igual al nombre y no se sobrescribe si la fila ya existe.
@@ -272,9 +337,12 @@ async function obtenerMotivos() {
 
     await initPromise;
 
+    // Solo motivos creados por el usuario (excluye los de departamento, que
+    // pertenecen al calendario de mantenimientos).
     return all(`
         SELECT id, nombre
         FROM motivos
+        WHERE origen = 'usuario'
         ORDER BY nombre ASC
     `);
 
@@ -332,9 +400,12 @@ async function obtenerColores() {
 
     await initPromise;
 
+    // Solo colores base/creados por el usuario (excluye los generados
+    // automáticamente para los departamentos de mantenimientos).
     return all(`
         SELECT id, nombre, valor
         FROM colores
+        WHERE origen = 'usuario'
         ORDER BY nombre ASC
     `);
 
@@ -520,6 +591,250 @@ async function eliminarDia(id) {
 
 }
 
+// =====================================
+// DEPARTAMENTOS CON COLOR (solo mantenimientos)
+// =====================================
+
+// Resuelve (o crea) un motivo cuyo nombre coincide con el del departamento.
+// Así el día de mantenimiento reutiliza calendario_dias.motivo_id sin tocar el
+// esquema. Devuelve el id del motivo.
+async function asegurarMotivoPorNombre(nombre) {
+
+    await initPromise;
+
+    const nombreLimpio = (nombre || '').trim();
+
+    if (nombreLimpio === '') {
+        throw new Error('El departamento no puede estar vacío.');
+    }
+
+    const existente = await get(
+        'SELECT id FROM motivos WHERE nombre = ?',
+        [nombreLimpio]
+    );
+
+    if (existente) {
+        return existente.id;
+    }
+
+    // Motivo generado para un departamento: origen 'departamento' para que NO
+    // aparezca en los calendarios de compras.
+    const resultado = await run(
+        `INSERT INTO motivos (nombre, origen) VALUES (?, 'departamento')`,
+        [nombreLimpio]
+    );
+
+    return resultado.id;
+
+}
+
+// Devuelve el mapeo color de un departamento, o undefined si no tiene.
+async function obtenerColorDepartamento(departamento) {
+
+    await initPromise;
+
+    const nombreLimpio = (departamento || '').trim();
+
+    if (nombreLimpio === '') {
+        return undefined;
+    }
+
+    return get(
+        `
+        SELECT
+            dc.departamento,
+            dc.color_id,
+            c.nombre AS color_nombre,
+            c.valor  AS color_valor
+        FROM departamento_colores dc
+        LEFT JOIN colores c ON c.id = dc.color_id
+        WHERE dc.departamento = ?
+        `,
+        [nombreLimpio]
+    );
+
+}
+
+// Lista todos los mapeos departamento -> color (para editarlos en la tarjeta).
+async function obtenerColoresDepartamentos() {
+
+    await initPromise;
+
+    return all(`
+        SELECT
+            dc.departamento,
+            dc.color_id,
+            c.nombre AS color_nombre,
+            c.valor  AS color_valor
+        FROM departamento_colores dc
+        LEFT JOIN colores c ON c.id = dc.color_id
+        ORDER BY dc.departamento ASC
+    `);
+
+}
+
+// Upsert del color de un departamento (crea el mapeo o lo actualiza).
+async function asignarColorDepartamento(departamento, colorId) {
+
+    await initPromise;
+
+    const nombreLimpio = (departamento || '').trim();
+
+    if (nombreLimpio === '') {
+        throw new Error('El departamento no puede estar vacío.');
+    }
+
+    if (!colorId) {
+        throw new Error('Debe indicar un color.');
+    }
+
+    return run(
+        `
+        INSERT INTO departamento_colores (departamento, color_id)
+        VALUES (?, ?)
+        ON CONFLICT(departamento) DO UPDATE SET color_id = excluded.color_id
+        `,
+        [nombreLimpio, colorId]
+    );
+
+}
+
+// Genera un color hexadecimal distribuido uniformemente por el círculo
+// cromático (matiz), para producir N colores bien diferenciados.
+function colorPorIndice(indice, total) {
+
+    const h = Math.round((360 / Math.max(total, 1)) * indice) % 360;
+    const s = 65; // saturación %
+    const l = 55; // luminosidad %
+
+    // HSL -> RGB -> HEX
+    const sN = s / 100;
+    const lN = l / 100;
+
+    const c = (1 - Math.abs(2 * lN - 1)) * sN;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = lN - c / 2;
+
+    let r = 0;
+    let g = 0;
+    let b = 0;
+
+    if (h < 60) { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+
+    const aHex = (v) =>
+        Math.round((v + m) * 255).toString(16).padStart(2, '0');
+
+    return '#' + aHex(r) + aHex(g) + aHex(b);
+
+}
+
+// Garantiza un color DISTINTO para cada departamento de la lista. Si un
+// departamento no tiene color asignado, genera uno nuevo (matiz único según
+// la cantidad total), lo inserta en el catálogo de colores y crea el mapeo.
+// Idempotente: los departamentos que ya tienen color no se tocan.
+async function asegurarColoresParaDepartamentos(nombres) {
+
+    await initPromise;
+
+    const lista = Array.isArray(nombres)
+        ? nombres.map((n) => (n || '').trim()).filter(Boolean)
+        : [];
+
+    if (!lista.length) {
+        return { success: true, asignados: 0 };
+    }
+
+    const total = lista.length;
+    let asignados = 0;
+
+    // Valores de los 6 colores base (reservados para los calendarios de
+    // compras): un departamento NO debe quedarse con uno de estos.
+    const valoresBase = new Set(seedColores.map((c) => c.valor));
+
+    for (let i = 0; i < lista.length; i += 1) {
+
+        const depto = lista[i];
+
+        // ¿Ya tiene color asignado?
+        const existente = await get(
+            `
+            SELECT dc.color_id, c.valor AS color_valor
+            FROM departamento_colores dc
+            LEFT JOIN colores c ON c.id = dc.color_id
+            WHERE dc.departamento = ?
+            `,
+            [depto]
+        );
+
+        // Tiene un color propio (no base): no lo tocamos.
+        if (existente && existente.color_valor && !valoresBase.has(existente.color_valor)) {
+            continue;
+        }
+
+        // Generar un color único por índice. Si colisiona con un color base,
+        // lo desplazamos un grado de matiz hasta que sea propio.
+        let valor = colorPorIndice(i, total);
+        let intento = 0;
+
+        while (valoresBase.has(valor) && intento < 360) {
+            valor = colorPorIndice(i + intento + 1, total + 1);
+            intento += 1;
+        }
+
+        const nombreColor = 'Depto ' + depto;
+
+        // Insertar el color si no existe (por valor). Reutiliza si ya existía.
+        let colorRow = await get(
+            'SELECT id FROM colores WHERE valor = ?',
+            [valor]
+        );
+
+        if (!colorRow) {
+
+            // Evitar colisión por el UNIQUE de nombre. Origen 'departamento'
+            // para que NO aparezca en los calendarios de compras.
+            const insert = await run(
+                `INSERT OR IGNORE INTO colores (nombre, valor, origen) VALUES (?, ?, 'departamento')`,
+                [nombreColor, valor]
+            );
+
+            colorRow = await get(
+                'SELECT id FROM colores WHERE valor = ?',
+                [valor]
+            );
+
+            if (!colorRow && insert && insert.id) {
+                colorRow = { id: insert.id };
+            }
+
+        }
+
+        if (!colorRow) {
+            continue;
+        }
+
+        await run(
+            `
+            INSERT INTO departamento_colores (departamento, color_id)
+            VALUES (?, ?)
+            ON CONFLICT(departamento) DO UPDATE SET color_id = excluded.color_id
+            `,
+            [depto, colorRow.id]
+        );
+
+        asignados += 1;
+
+    }
+
+    return { success: true, asignados };
+
+}
+
 module.exports = {
     obtenerCalendarios,
     obtenerCalendarioPorClave,
@@ -532,5 +847,10 @@ module.exports = {
     obtenerDiasPorCalendarioYMes,
     crearDia,
     actualizarDia,
-    eliminarDia
+    eliminarDia,
+    asegurarMotivoPorNombre,
+    obtenerColorDepartamento,
+    obtenerColoresDepartamentos,
+    asignarColorDepartamento,
+    asegurarColoresParaDepartamentos
 };

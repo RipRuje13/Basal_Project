@@ -5,10 +5,21 @@
     <!-- ================================
          Card: Departamentos
          ================================ -->
-    <div class="card border-secondary mb-3">
+    <div class="card border-secondary mb-3 card-gestion">
 
-        <div class="card-header">
-            <div class="input-group">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span>Departamentos</span>
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary btn-toggle-card"
+                title="Expandir u ocultar"
+                aria-expanded="false">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="card-body" style="display: none;">
+            <div class="input-group mb-3">
                 <input
                     id="inputNuevoDepartamento"
                     class="form-control"
@@ -21,9 +32,7 @@
                     Agregar
                 </button>
             </div>
-        </div>
 
-        <div class="card-body">
             <table id="tablaDepartamentos" class="table table-hover mb-0">
                 <thead>
                     <tr>
@@ -40,10 +49,21 @@
     <!-- ================================
          Card: Unidades de Negocio
          ================================ -->
-    <div class="card border-secondary mb-3">
+    <div class="card border-secondary mb-3 card-gestion">
 
-        <div class="card-header">
-            <div class="input-group">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span>Unidades de Negocio</span>
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary btn-toggle-card"
+                title="Expandir u ocultar"
+                aria-expanded="false">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="card-body" style="display: none;">
+            <div class="input-group mb-3">
                 <input
                     id="inputNuevaUnidad"
                     class="form-control"
@@ -56,10 +76,52 @@
                     Agregar
                 </button>
             </div>
+
+            <table id="tablaUnidades" class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th class="text-end"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
 
-        <div class="card-body">
-            <table id="tablaUnidades" class="table table-hover mb-0">
+    </div>
+
+    <!-- ================================
+         Card: Ubicaciones
+         ================================ -->
+    <div class="card border-secondary mb-3 card-gestion">
+
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span>Ubicaciones</span>
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary btn-toggle-card"
+                title="Expandir u ocultar"
+                aria-expanded="false">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="card-body" style="display: none;">
+            <div class="input-group mb-3">
+                <input
+                    id="inputNuevaUbicacion"
+                    class="form-control"
+                    type="text"
+                    placeholder="Nueva ubicación" />
+                <button
+                    id="btnAgregarUbicacion"
+                    class="btn btn-success"
+                    type="button">
+                    Agregar
+                </button>
+            </div>
+
+            <table id="tablaUbicaciones" class="table table-hover mb-0">
                 <thead>
                     <tr>
                         <th>Nombre</th>

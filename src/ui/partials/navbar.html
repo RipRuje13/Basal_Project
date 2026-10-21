@@ -36,10 +36,25 @@
           </div>
         </li>
       </ul>
-      <form class="d-flex">
+      <form class="d-flex me-2">
         <input class="form-control me-sm-2" type="search" placeholder="Search">
         <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
       </form>
+
+      <div class="dropdown">
+        <button
+          id="btnTema"
+          class="btn btn-secondary dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false">
+          Tema
+        </button>
+        <div id="menuTema" class="dropdown-menu dropdown-menu-end" aria-labelledby="btnTema">
+          <!-- Opciones de tema generadas dinámicamente desde tema.js -->
+        </div>
+      </div>
     </div>
   </div>
 </nav>

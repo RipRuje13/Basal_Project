@@ -75,6 +75,13 @@ const seedUnidades = [
     'HELP AI'
 ];
 
+// Valores iniciales tomados del HTML (almacen-fragment.html, select ubicacion).
+const seedUbicaciones = [
+    'Torre Alfa 14',
+    'Bodega Cosas Rotas',
+    'Bodega Cosas Funcionales'
+];
+
 async function inicializarGestion() {
 
     await run(`
@@ -86,6 +93,13 @@ async function inicializarGestion() {
 
     await run(`
         CREATE TABLE IF NOT EXISTS unidades_negocio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL UNIQUE
+        )
+    `);
+
+    await run(`
+        CREATE TABLE IF NOT EXISTS ubicaciones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL UNIQUE
         )
@@ -116,6 +130,21 @@ async function inicializarGestion() {
         for (const nombre of seedUnidades) {
             await run(
                 'INSERT OR IGNORE INTO unidades_negocio (nombre) VALUES (?)',
+                [nombre]
+            );
+        }
+
+    }
+
+    const totalUbicaciones = await all(
+        'SELECT COUNT(*) AS total FROM ubicaciones'
+    );
+
+    if (totalUbicaciones[0].total === 0) {
+
+        for (const nombre of seedUbicaciones) {
+            await run(
+                'INSERT OR IGNORE INTO ubicaciones (nombre) VALUES (?)',
                 [nombre]
             );
         }
@@ -446,6 +475,166 @@ async function eliminarUnidad(id) {
 
 }
 
+async function obtenerUbicaciones() {
+
+    await initPromise;
+
+    return new Promise((resolve, reject) => {
+
+        const sql = `
+            SELECT id, nombre
+            FROM ubicaciones
+            ORDER BY nombre ASC
+        `;
+
+        db.all(sql, [], (err, rows) => {
+
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve(rows);
+
+        });
+
+    });
+
+}
+
+async function crearUbicacion(nombre) {
+
+    await initPromise;
+
+    return new Promise((resolve, reject) => {
+
+        const nombreLimpio = (nombre || '').trim();
+
+        if (nombreLimpio === '') {
+            reject(new Error('El nombre no puede estar vacío.'));
+            return;
+        }
+
+        const sql = `
+            INSERT INTO ubicaciones (nombre)
+            VALUES (?)
+        `;
+
+        db.run(
+            sql,
+            [nombreLimpio],
+            function (err) {
+
+                if (err) {
+
+                    if (
+                        err.code === 'SQLITE_CONSTRAINT'
+                        || /UNIQUE/.test(err.message)
+                    ) {
+                        reject(new Error('Ya existe un registro con ese nombre.'));
+                        return;
+                    }
+
+                    reject(err);
+                    return;
+                }
+
+                resolve({
+                    success: true,
+                    id: this.lastID
+                });
+
+            }
+        );
+
+    });
+
+}
+
+async function actualizarUbicacion(id, nombre) {
+
+    await initPromise;
+
+    return new Promise((resolve, reject) => {
+
+        const nombreLimpio = (nombre || '').trim();
+
+        if (nombreLimpio === '') {
+            reject(new Error('El nombre no puede estar vacío.'));
+            return;
+        }
+
+        const sql = `
+            UPDATE ubicaciones
+            SET nombre = ?
+            WHERE id = ?
+        `;
+
+        db.run(
+            sql,
+            [nombreLimpio, id],
+            function (err) {
+
+                if (err) {
+
+                    if (
+                        err.code === 'SQLITE_CONSTRAINT'
+                        || /UNIQUE/.test(err.message)
+                    ) {
+                        reject(new Error('Ya existe un registro con ese nombre.'));
+                        return;
+                    }
+
+                    reject(err);
+                    return;
+                }
+
+                resolve({
+                    success: true,
+                    changes: this.changes
+                });
+
+            }
+        );
+
+    });
+
+}
+
+async function eliminarUbicacion(id) {
+
+    await initPromise;
+
+    return new Promise((resolve, reject) => {
+
+        const sql = `
+            DELETE
+            FROM ubicaciones
+            WHERE id = ?
+        `;
+
+        db.run(
+            sql,
+            [id],
+            function (err) {
+
+                if (err) {
+                    reject(err);
+                    return;
+                }
+
+                resolve({
+                    success: true,
+                    changes: this.changes
+                });
+
+            }
+        );
+
+    });
+
+}
+
 module.exports = {
     obtenerDepartamentos,
     crearDepartamento,
@@ -454,5 +643,9 @@ module.exports = {
     obtenerUnidades,
     crearUnidad,
     actualizarUnidad,
-    eliminarUnidad
+    eliminarUnidad,
+    obtenerUbicaciones,
+    crearUbicacion,
+    actualizarUbicacion,
+    eliminarUbicacion
 };
