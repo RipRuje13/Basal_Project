@@ -114,6 +114,17 @@ const seedCalendarios = [
     { clave: 'mantenimientos', nombre: 'Programa Anual de Mantenimientos' }
 ];
 
+// Autoridad única de defaults para los ajustes de notificación. Alimenta el
+// COALESCE del SELECT del scheduler (obtenerEventosParaNotificar) y los
+// valores que pinta la UI cuando un motivo aún no tiene ajuste propio.
+const DEFAULTS_NOTIFICACION = {
+    activo: 1,
+    dias_antelacion: 1,
+    hora_recordatorio: '09:00',
+    repetir_cada_horas: 0,
+    recordar_dias_previos: 0
+};
+
 // Paleta común de colores. Solo se siembra si la tabla está vacía.
 const seedColores = [
     { nombre: 'Rojo', valor: '#dc3545' },
@@ -216,6 +227,23 @@ async function inicializarCalendarios() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             departamento TEXT NOT NULL UNIQUE,
             color_id INTEGER NOT NULL
+        )
+    `);
+
+    // Ajustes de notificación por (calendario, motivo). Idempotente. La fila
+    // solo existe cuando el usuario la guarda; el scheduler usa DEFAULTS vía
+    // COALESCE para los motivos sin ajuste propio.
+    await run(`
+        CREATE TABLE IF NOT EXISTS notificacion_ajustes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            calendario_id INTEGER NOT NULL,
+            motivo_id INTEGER NOT NULL,
+            activo INTEGER NOT NULL DEFAULT 1,
+            dias_antelacion INTEGER NOT NULL DEFAULT 1,
+            hora_recordatorio TEXT NOT NULL DEFAULT '09:00',
+            repetir_cada_horas INTEGER NOT NULL DEFAULT 0,
+            recordar_dias_previos INTEGER NOT NULL DEFAULT 0,
+            UNIQUE(calendario_id, motivo_id)
         )
     `);
 
@@ -835,6 +863,181 @@ async function asegurarColoresParaDepartamentos(nombres) {
 
 }
 
+// =====================================
+// AJUSTES DE NOTIFICACIÓN
+// =====================================
+
+// Devuelve los ajustes de notificación guardados para un calendario. Solo las
+// filas existentes (NO inventa motivos ni consulta gestion.service); la UI
+// completa los faltantes con DEFAULTS_NOTIFICACION.
+async function obtenerAjustesNotificacion(claveOId) {
+
+    await initPromise;
+
+    const calendarioId = await resolverCalendarioId(claveOId);
+
+    if (calendarioId === null) {
+        throw new Error('El calendario indicado no existe.');
+    }
+
+    return all(
+        `
+        SELECT
+            na.calendario_id,
+            na.motivo_id,
+            m.nombre AS motivo_nombre,
+            na.activo,
+            na.dias_antelacion,
+            na.hora_recordatorio,
+            na.repetir_cada_horas,
+            na.recordar_dias_previos
+        FROM notificacion_ajustes na
+        LEFT JOIN motivos m ON m.id = na.motivo_id
+        WHERE na.calendario_id = ?
+        `,
+        [calendarioId]
+    );
+
+}
+
+// Upsert de un ajuste de notificación para un (calendario, motivo). En
+// mantenimientos el motivo puede llegar como nombre de departamento (se
+// resuelve/crea); en compras debe ser un id de motivo entero. Valida rangos y
+// formato con mensajes en español.
+async function guardarAjusteNotificacion(ajuste) {
+
+    await initPromise;
+
+    const datos = ajuste || {};
+
+    const calendarioId = await resolverCalendarioId(datos.calendario);
+
+    if (calendarioId === null) {
+        throw new Error('El calendario indicado no existe.');
+    }
+
+    // Resolver el motivo según el tipo de calendario.
+    const calendario = await get(
+        'SELECT clave FROM calendarios WHERE id = ?',
+        [calendarioId]
+    );
+
+    const esMantenimientos = calendario && calendario.clave === 'mantenimientos';
+
+    let motivoId = null;
+
+    if (
+        esMantenimientos
+        && datos.motivo != null
+        && !/^\d+$/.test(String(datos.motivo))
+    ) {
+        // Llega el nombre del departamento: crear/resolver su motivo.
+        motivoId = await asegurarMotivoPorNombre(datos.motivo);
+    } else if (/^\d+$/.test(String(datos.motivo))) {
+        motivoId = Number(datos.motivo);
+    }
+
+    if (!motivoId) {
+        throw new Error('Debe seleccionar un motivo o departamento.');
+    }
+
+    // Validaciones de rango/formato.
+    const diasAntelacion = Number(datos.dias_antelacion);
+
+    if (!Number.isInteger(diasAntelacion) || diasAntelacion < 0) {
+        throw new Error('Los días de antelación deben ser un entero mayor o igual a 0.');
+    }
+
+    if (diasAntelacion > 365) {
+        throw new Error('Los días de antelación no pueden ser mayores a 365.');
+    }
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(datos.hora_recordatorio || ''))) {
+        throw new Error('La hora del recordatorio no es válida (formato HH:MM).');
+    }
+
+    const repetirCadaHoras = Number(datos.repetir_cada_horas);
+
+    if (!Number.isInteger(repetirCadaHoras) || repetirCadaHoras < 0) {
+        throw new Error('La repetición debe ser un entero mayor o igual a 0 (0 = no repetir).');
+    }
+
+    if (repetirCadaHoras > 24) {
+        throw new Error('La repetición no puede ser mayor a 24 horas.');
+    }
+
+    const activo = datos.activo ? 1 : 0;
+    const recordarDiasPrevios = datos.recordar_dias_previos ? 1 : 0;
+
+    await run(
+        `
+        INSERT INTO notificacion_ajustes (
+            calendario_id,
+            motivo_id,
+            activo,
+            dias_antelacion,
+            hora_recordatorio,
+            repetir_cada_horas,
+            recordar_dias_previos
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(calendario_id, motivo_id) DO UPDATE SET
+            activo = excluded.activo,
+            dias_antelacion = excluded.dias_antelacion,
+            hora_recordatorio = excluded.hora_recordatorio,
+            repetir_cada_horas = excluded.repetir_cada_horas,
+            recordar_dias_previos = excluded.recordar_dias_previos
+        `,
+        [
+            calendarioId,
+            motivoId,
+            activo,
+            diasAntelacion,
+            String(datos.hora_recordatorio),
+            repetirCadaHoras,
+            recordarDiasPrevios
+        ]
+    );
+
+    return { success: true, motivo_id: motivoId };
+
+}
+
+// Devuelve los eventos (días) de la ventana próxima con sus ajustes efectivos
+// de notificación, aplicando DEFAULTS_NOTIFICACION vía COALESCE cuando un
+// (calendario, motivo) aún no tiene ajuste propio. Consumido por el scheduler.
+async function obtenerEventosParaNotificar() {
+
+    await initPromise;
+
+    return all(`
+        SELECT
+            d.id AS dia_id,
+            d.calendario_id,
+            cal.clave AS calendario_clave,
+            cal.nombre AS calendario_nombre,
+            d.fecha,
+            d.motivo_id,
+            m.nombre AS motivo_nombre,
+            m.origen AS motivo_origen,
+            COALESCE(na.activo, ${DEFAULTS_NOTIFICACION.activo}) AS activo,
+            COALESCE(na.dias_antelacion, ${DEFAULTS_NOTIFICACION.dias_antelacion}) AS dias_antelacion,
+            COALESCE(na.hora_recordatorio, '${DEFAULTS_NOTIFICACION.hora_recordatorio}') AS hora_recordatorio,
+            COALESCE(na.repetir_cada_horas, ${DEFAULTS_NOTIFICACION.repetir_cada_horas}) AS repetir_cada_horas,
+            COALESCE(na.recordar_dias_previos, ${DEFAULTS_NOTIFICACION.recordar_dias_previos}) AS recordar_dias_previos
+        FROM calendario_dias d
+        JOIN calendarios cal ON cal.id = d.calendario_id
+        LEFT JOIN motivos m ON m.id = d.motivo_id
+        LEFT JOIN notificacion_ajustes na
+            ON na.calendario_id = d.calendario_id
+            AND na.motivo_id = d.motivo_id
+        WHERE d.fecha >= date('now', '-1 day')
+            AND d.fecha <= date('now', '+365 day')
+        ORDER BY d.fecha ASC
+    `);
+
+}
+
 module.exports = {
     obtenerCalendarios,
     obtenerCalendarioPorClave,
@@ -852,5 +1055,8 @@ module.exports = {
     obtenerColorDepartamento,
     obtenerColoresDepartamentos,
     asignarColorDepartamento,
-    asegurarColoresParaDepartamentos
+    asegurarColoresParaDepartamentos,
+    obtenerAjustesNotificacion,
+    guardarAjusteNotificacion,
+    obtenerEventosParaNotificar
 };
