@@ -16,6 +16,17 @@
     let motivos = [];
     let colores = [];
 
+    // Defaults de notificación para pintar filas sin ajuste guardado.
+    // Debe coincidir con DEFAULTS_NOTIFICACION del servicio (FEAT-001);
+    // la constante del servicio no se exporta, por eso se replica aquí.
+    const DEFAULTS_NOTIFICACION = {
+        activo: 1,
+        dias_antelacion: 1,
+        hora_recordatorio: '09:00',
+        repetir_cada_horas: 0,
+        recordar_dias_previos: 0
+    };
+
     // Departamentos (de gestion.service) y su mapeo de color asignado.
     let departamentos = [];
     let coloresPorDepartamento = new Map(); // nombre depto -> { color_id, color_valor, color_nombre }
@@ -268,6 +279,47 @@
                     <nav aria-label="Paginación de días">
                         <ul class="pagination pagination-sm mb-0 lista-paginacion-dias"></ul>
                     </nav>
+                </div>
+
+                <!-- Ajustes de notificaciones (colapsable, oculto por defecto) -->
+                <div
+                    class="border rounded p-3 mt-3 notif-box"
+                    data-cal-id="${cal.id}"
+                    data-clave="${escaparHtml(cal.clave)}">
+
+                    <div class="d-flex align-items-center justify-content-between">
+                        <strong>Notificaciones</strong>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary btn-toggle-notif"
+                            title="Mostrar u ocultar ajustes de notificaciones"
+                            aria-expanded="false">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+
+                    <div
+                        class="notif-panel mt-3"
+                        id="notifPanel-${cal.id}"
+                        style="display: none;">
+
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>${esCalendarioDepartamentos(cal) ? 'Departamento' : 'Motivo'}</th>
+                                    <th class="text-center">Activo</th>
+                                    <th>Días de antelación</th>
+                                    <th>Hora del recordatorio</th>
+                                    <th>Repetir cada (horas)</th>
+                                    <th class="text-center">Recordar cada día previo</th>
+                                    <th class="text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifTbody-${cal.id}"></tbody>
+                        </table>
+
+                    </div>
+
                 </div>
 
             </div>
@@ -628,6 +680,189 @@
     }
 
     // =====================================
+    // CARGAR AJUSTES DE NOTIFICACIÓN
+    // =====================================
+
+    // Pinta una fila de la tabla de notificaciones. En compras la fila se
+    // identifica por data-motivo-id; en mantenimientos por data-depto-nombre.
+    // Los valores salen del ajuste casado o de DEFAULTS_NOTIFICACION.
+    function crearFilaNotificacion(cal, etiqueta, ajuste, identificador) {
+
+        const esDeptos =
+            esCalendarioDepartamentos(cal);
+
+        const activo =
+            ajuste ? ajuste.activo : DEFAULTS_NOTIFICACION.activo;
+
+        const diasAntelacion =
+            ajuste ? ajuste.dias_antelacion : DEFAULTS_NOTIFICACION.dias_antelacion;
+
+        const horaRecordatorio =
+            ajuste ? ajuste.hora_recordatorio : DEFAULTS_NOTIFICACION.hora_recordatorio;
+
+        const repetirCadaHoras =
+            ajuste ? ajuste.repetir_cada_horas : DEFAULTS_NOTIFICACION.repetir_cada_horas;
+
+        const recordarDiasPrevios =
+            ajuste ? ajuste.recordar_dias_previos : DEFAULTS_NOTIFICACION.recordar_dias_previos;
+
+        const tr =
+            document.createElement('tr');
+
+        // Atributo identificador según el modo del calendario.
+        const attrId =
+            esDeptos
+                ? `data-depto-nombre="${escaparHtml(identificador)}"`
+                : `data-motivo-id="${escaparHtml(identificador)}"`;
+
+        const attrBoton =
+            esDeptos
+                ? `data-depto-nombre="${escaparHtml(identificador)}"`
+                : `data-motivo-id="${escaparHtml(identificador)}"`;
+
+        tr.innerHTML = `
+            <td ${attrId}>${escaparHtml(etiqueta)}</td>
+            <td class="text-center">
+                <input
+                    type="checkbox"
+                    class="form-check-input notif-activo"
+                    ${Number(activo) ? 'checked' : ''} />
+            </td>
+            <td>
+                <input
+                    type="number"
+                    class="form-control form-control-sm notif-dias"
+                    min="0"
+                    max="365"
+                    value="${escaparHtml(diasAntelacion)}" />
+            </td>
+            <td>
+                <input
+                    type="time"
+                    class="form-control form-control-sm notif-hora"
+                    value="${escaparHtml(horaRecordatorio)}" />
+            </td>
+            <td>
+                <input
+                    type="number"
+                    class="form-control form-control-sm notif-repetir"
+                    min="0"
+                    max="24"
+                    value="${escaparHtml(repetirCadaHoras)}" />
+            </td>
+            <td class="text-center">
+                <input
+                    type="checkbox"
+                    class="form-check-input notif-previos"
+                    title="Recordar cada día previo"
+                    ${Number(recordarDiasPrevios) ? 'checked' : ''} />
+            </td>
+            <td class="text-end">
+                <button
+                    type="button"
+                    class="btn btn-sm btn-success btn-guardar-notif"
+                    data-cal-id="${cal.id}"
+                    data-clave="${escaparHtml(cal.clave)}"
+                    ${attrBoton}>
+                    Guardar
+                </button>
+            </td>
+        `;
+
+        return tr;
+
+    }
+
+    // Carga los ajustes de notificación de un calendario en su tabla.
+    // Análoga a cargarDias: una fila por motivo (compras) o departamento
+    // (mantenimientos), poblada con el ajuste guardado o con los defaults.
+    async function cargarAjustesNotificacion(cal) {
+
+        const tbody =
+            document.getElementById('notifTbody-' + cal.id);
+
+        if (!tbody) return;
+
+        const esDeptos =
+            esCalendarioDepartamentos(cal);
+
+        try {
+
+            const ajustes =
+                await calendariosService.obtenerAjustesNotificacion(cal.clave);
+
+            // Mapa de ajustes guardados por motivo_id (compras) o por
+            // motivo_nombre (mantenimientos, que usan nombre de departamento).
+            const ajustesPorClave = new Map();
+
+            (ajustes || []).forEach((aj) => {
+
+                if (esDeptos) {
+                    ajustesPorClave.set(aj.motivo_nombre, aj);
+                }
+                else {
+                    ajustesPorClave.set(String(aj.motivo_id), aj);
+                }
+
+            });
+
+            tbody.innerHTML = '';
+
+            const catalogo =
+                esDeptos ? departamentos : motivos;
+
+            if (!catalogo || !catalogo.length) {
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-3">
+                            No hay ${esDeptos ? 'departamentos' : 'motivos'} configurables.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+            catalogo.forEach((entrada) => {
+
+                if (esDeptos) {
+
+                    const ajuste =
+                        ajustesPorClave.get(entrada.nombre);
+
+                    tbody.appendChild(
+                        crearFilaNotificacion(cal, entrada.nombre, ajuste, entrada.nombre)
+                    );
+
+                }
+                else {
+
+                    const ajuste =
+                        ajustesPorClave.get(String(entrada.id));
+
+                    tbody.appendChild(
+                        crearFilaNotificacion(cal, entrada.nombre, ajuste, entrada.id)
+                    );
+
+                }
+
+            });
+
+        }
+        catch (error) {
+
+            console.error(
+                'Error cargando ajustes de notificación:',
+                error
+            );
+
+        }
+
+    }
+
+    // =====================================
     // RECARGA DE CATÁLOGOS
     // =====================================
 
@@ -811,6 +1046,121 @@
                         icono.className = oculto
                             ? 'bi bi-chevron-up'
                             : 'bi bi-chevron-down';
+                    }
+
+                    return;
+
+                }
+
+                // ----- Expandir / ocultar panel de notificaciones -----
+                const btnToggleNotif =
+                    e.target.closest('.btn-toggle-notif');
+
+                if (btnToggleNotif) {
+
+                    e.preventDefault();
+
+                    const caja =
+                        btnToggleNotif.closest('.notif-box');
+
+                    const panel =
+                        caja ? caja.querySelector('.notif-panel') : null;
+
+                    if (!panel) return;
+
+                    const oculto =
+                        panel.style.display === 'none';
+
+                    panel.style.display = oculto ? '' : 'none';
+
+                    btnToggleNotif.setAttribute(
+                        'aria-expanded',
+                        oculto ? 'true' : 'false'
+                    );
+
+                    const icono = btnToggleNotif.querySelector('i');
+
+                    if (icono) {
+                        icono.className = oculto
+                            ? 'bi bi-chevron-up'
+                            : 'bi bi-chevron-down';
+                    }
+
+                    return;
+
+                }
+
+                // ----- Guardar ajuste de notificación -----
+                const btnGuardarNotif =
+                    e.target.closest('.btn-guardar-notif');
+
+                if (btnGuardarNotif) {
+
+                    e.preventDefault();
+
+                    const tr =
+                        btnGuardarNotif.closest('tr');
+
+                    if (!tr) return;
+
+                    const clave =
+                        btnGuardarNotif.dataset.clave;
+
+                    const esDeptos =
+                        clave === CLAVE_CAL_DEPARTAMENTOS;
+
+                    const inpActivo =
+                        tr.querySelector('.notif-activo');
+
+                    const inpDias =
+                        tr.querySelector('.notif-dias');
+
+                    const inpHora =
+                        tr.querySelector('.notif-hora');
+
+                    const inpRepetir =
+                        tr.querySelector('.notif-repetir');
+
+                    const inpPrevios =
+                        tr.querySelector('.notif-previos');
+
+                    // El motivo es el id del motivo (compras) o el nombre del
+                    // departamento (mantenimientos); el servicio resuelve este
+                    // último con asegurarMotivoPorNombre.
+                    const motivo =
+                        esDeptos
+                            ? btnGuardarNotif.dataset.deptoNombre
+                            : btnGuardarNotif.dataset.motivoId;
+
+                    // Hora vacía -> default del diseño.
+                    const horaRecordatorio =
+                        inpHora && inpHora.value
+                            ? inpHora.value
+                            : DEFAULTS_NOTIFICACION.hora_recordatorio;
+
+                    const ajuste = {
+                        calendario: clave,
+                        motivo: motivo,
+                        activo: inpActivo ? inpActivo.checked : false,
+                        dias_antelacion: inpDias ? inpDias.value : DEFAULTS_NOTIFICACION.dias_antelacion,
+                        hora_recordatorio: horaRecordatorio,
+                        repetir_cada_horas: inpRepetir ? inpRepetir.value : DEFAULTS_NOTIFICACION.repetir_cada_horas,
+                        recordar_dias_previos: inpPrevios ? inpPrevios.checked : false
+                    };
+
+                    try {
+
+                        await calendariosService.guardarAjusteNotificacion(ajuste);
+
+                        alert('Ajustes guardados.');
+
+                    }
+                    catch (error) {
+
+                        console.error(error);
+
+                        alert(error.message);
+
                     }
 
                     return;
@@ -1379,6 +1729,8 @@
             root.appendChild(card);
 
             await cargarDias(cal);
+
+            await cargarAjustesNotificacion(cal);
 
         }
 
