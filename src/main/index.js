@@ -7,6 +7,15 @@ require('../database/connection')
 require('electron-reload')(path.join(__dirname, '..'))
 
 app.allowRendererProcessReuse = false;
+
+// En Windows, las notificaciones nativas requieren un App User Model ID
+// explícito; sin él, Windows suele descartar las notificaciones de apps no
+// empaquetadas (ejecutadas con `npm start`). Debe fijarse antes de crear la
+// ventana / mostrar cualquier notificación.
+if (process.platform === 'win32') {
+    app.setAppUserModelId('com.basal.inventario');
+}
+
 app.whenReady().then(createWindow);
 
 // ============================================================
