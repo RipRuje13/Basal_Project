@@ -61,6 +61,21 @@ function initActividades() {
     const actividadesPaginacionInfo =
         document.getElementById('actividadesPaginacionInfo');
 
+    const filtroActTexto =
+        document.getElementById('filtroActTexto');
+
+    const filtroActEstatus =
+        document.getElementById('filtroActEstatus');
+
+    const filtroActTipo =
+        document.getElementById('filtroActTipo');
+
+    const filtroActPrioridad =
+        document.getElementById('filtroActPrioridad');
+
+    const btnLimpiarFiltrosActividades =
+        document.getElementById('btnLimpiarFiltrosActividades');
+
     let actividadEditandoId = null;
     let actividadesCache = [];
 
@@ -157,13 +172,120 @@ function initActividades() {
 
     }
 
+    function normalizarTexto(valor) {
+
+        return (valor ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+
+    }
+
+    // =====================================
+    // FILTROS
+    // =====================================
+
+    function obtenerActividadesFiltradas() {
+
+        const texto =
+            normalizarTexto(filtroActTexto?.value);
+
+        const estatus =
+            normalizarTexto(filtroActEstatus?.value);
+
+        const tipo =
+            normalizarTexto(filtroActTipo?.value);
+
+        const prioridad =
+            normalizarTexto(filtroActPrioridad?.value);
+
+        return actividadesCache.filter((actividad) => {
+
+            const coincideTexto =
+                !texto ||
+                [
+                    actividad.titulo,
+                    actividad.descripcion,
+                    actividad.colaborador,
+                    actividad.departamento
+                ]
+                    .map(normalizarTexto)
+                    .some((v) => v.includes(texto));
+
+            const coincideEstatus =
+                !estatus ||
+                normalizarTexto(actividad.estatus) === estatus;
+
+            const coincideTipo =
+                !tipo ||
+                normalizarTexto(actividad.tipo) === tipo;
+
+            const coincidePrioridad =
+                !prioridad ||
+                normalizarTexto(actividad.prioridad) === prioridad;
+
+            return (
+                coincideTexto &&
+                coincideEstatus &&
+                coincideTipo &&
+                coincidePrioridad
+            );
+
+        });
+
+    }
+
+    function aplicarFiltrosActividades() {
+
+        // Cualquier cambio de filtro vuelve a la primera página.
+        paginaActualActividades = 1;
+
+        renderPaginaActividades();
+
+    }
+
+    // =====================================
+    // RESUMEN DEL DÍA
+    // =====================================
+
+    // Cuenta las actividades CREADAS HOY por estatus y actualiza las tarjetas.
+    // El resumen refleja el día real, no el filtro activo.
+    function actualizarResumen() {
+
+        const hoy =
+            new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+
+        const deHoy =
+            actividadesCache.filter((a) =>
+                (a.fecha_creacion ?? '').toString().slice(0, 10) === hoy
+            );
+
+        const contar = (estatus) =>
+            deHoy.filter((a) =>
+                (a.estatus ?? '').trim() === estatus
+            ).length;
+
+        const setTexto = (id, valor) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(valor);
+        };
+
+        setTexto('resumenTotalHoy', deHoy.length);
+        setTexto('resumenPorHacer', contar('Por hacer'));
+        setTexto('resumenEnProgreso', contar('En progreso'));
+        setTexto('resumenHecho', contar('Hecho'));
+
+    }
+
     // =====================================
     // PAGINACIÓN
     // =====================================
 
     function renderPaginaActividades() {
 
-        const totalFilas = actividadesCache.length;
+        const filtradas = obtenerActividadesFiltradas();
+
+        const totalFilas = filtradas.length;
 
         const totalPaginas = Math.max(
             1,
@@ -184,7 +306,7 @@ function initActividades() {
             (paginaActualActividades - 1) * FILAS_POR_PAGINA;
 
         const paginaFilas =
-            actividadesCache.slice(inicio, inicio + FILAS_POR_PAGINA);
+            filtradas.slice(inicio, inicio + FILAS_POR_PAGINA);
 
         renderActividades(paginaFilas);
 
@@ -387,6 +509,8 @@ function initActividades() {
 
             actividadesCache = actividades;
 
+            actualizarResumen();
+
             renderPaginaActividades();
 
         }
@@ -539,6 +663,39 @@ function initActividades() {
 
         }
     );
+
+    // =====================================
+    // LISTENERS DE FILTROS
+    // =====================================
+
+    [
+        filtroActTexto,
+        filtroActEstatus,
+        filtroActTipo,
+        filtroActPrioridad
+    ]
+        .filter(Boolean)
+        .forEach((control) => {
+
+            control.addEventListener('input', aplicarFiltrosActividades);
+            control.addEventListener('change', aplicarFiltrosActividades);
+
+        });
+
+    if (btnLimpiarFiltrosActividades) {
+
+        btnLimpiarFiltrosActividades.addEventListener('click', () => {
+
+            if (filtroActTexto) filtroActTexto.value = '';
+            if (filtroActEstatus) filtroActEstatus.value = '';
+            if (filtroActTipo) filtroActTipo.value = '';
+            if (filtroActPrioridad) filtroActPrioridad.value = '';
+
+            aplicarFiltrosActividades();
+
+        });
+
+    }
 
     // =====================================
     // CARGA INICIAL

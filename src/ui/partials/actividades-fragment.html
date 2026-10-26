@@ -14,61 +14,72 @@
         <div class="card-body">
             <form id="actividadForm">
                 <fieldset>
-                    <div class="mb-3">
-                        <label for="actTipo" class="form-label">Tipo</label>
-                        <select class="form-select" id="actTipo">
-                            <option value="" selected disabled>Seleccione un tipo</option>
-                            <option>Actividad</option>
-                            <option>Tarea</option>
-                        </select>
+                    <div class="row g-3">
+
+                        <!-- Columna izquierda -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="actTipo" class="form-label">Tipo</label>
+                                <select class="form-select" id="actTipo">
+                                    <option value="" selected disabled>Seleccione un tipo</option>
+                                    <option>Actividad</option>
+                                    <option>Tarea</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="actTitulo" class="form-label">Título</label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="actTitulo"
+                                    placeholder="Título de la actividad"
+                                    required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="actDescripcion" class="form-label">Descripción</label>
+                                <textarea
+                                    class="form-control"
+                                    id="actDescripcion"
+                                    rows="3"
+                                    placeholder="Detalle de la actividad"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Columna derecha -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="actColaborador" class="form-label">Colaborador</label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="actColaborador"
+                                    placeholder="Nombre del colaborador" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="actDepartamento" class="form-label">Departamento</label>
+                                <select class="form-select" id="actDepartamento">
+                                    <option value="" selected disabled>Seleccione un departamento</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="actPrioridad" class="form-label">Prioridad</label>
+                                <select class="form-select" id="actPrioridad">
+                                    <option value="" selected disabled>Seleccione una prioridad</option>
+                                    <option>Baja</option>
+                                    <option>Media</option>
+                                    <option>Alta</option>
+                                </select>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <div class="mb-3">
-                        <label for="actTitulo" class="form-label">Título</label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="actTitulo"
-                            placeholder="Título de la actividad"
-                            required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="actDescripcion" class="form-label">Descripción</label>
-                        <textarea
-                            class="form-control"
-                            id="actDescripcion"
-                            rows="3"
-                            placeholder="Detalle de la actividad"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="actColaborador" class="form-label">Colaborador</label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="actColaborador"
-                            placeholder="Nombre del colaborador" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="actDepartamento" class="form-label">Departamento</label>
-                        <select class="form-select" id="actDepartamento">
-                            <option value="" selected disabled>Seleccione un departamento</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="actPrioridad" class="form-label">Prioridad</label>
-                        <select class="form-select" id="actPrioridad">
-                            <option value="" selected disabled>Seleccione una prioridad</option>
-                            <option>Baja</option>
-                            <option>Media</option>
-                            <option>Alta</option>
-                        </select>
-                    </div>
-
-                    <div class="d-flex gap-2">
+                    <!-- Botones: debajo de ambas columnas, ancho completo -->
+                    <div class="d-flex gap-2 mt-2">
                         <button type="submit" id="btnGuardarActividad" class="btn btn-primary">
                             Guardar
                         </button>
@@ -84,6 +95,44 @@
     </div>
 
     <!-- ================================
+         Resumen del día
+         ================================ -->
+    <div class="row g-3 mb-3" id="actividadesResumen">
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Creadas hoy</h6>
+                    <h3 class="mb-0" id="resumenTotalHoy">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100" style="background-color: #e5e7eb;">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Por hacer</h6>
+                    <h3 class="mb-0" id="resumenPorHacer">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100" style="background-color: #ffe8a3;">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">En progreso</h6>
+                    <h3 class="mb-0" id="resumenEnProgreso">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center h-100" style="background-color: #c6f6d5;">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Hechas</h6>
+                    <h3 class="mb-0" id="resumenHecho">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================
          Card: Lista de actividades
          ================================ -->
     <div class="card border-secondary mb-3 w-100">
@@ -93,6 +142,57 @@
         </div>
 
         <div class="card-body">
+
+            <!-- Filtros -->
+            <div class="actividades-filtros mb-3">
+                <div>
+                    <label for="filtroActTexto" class="form-label">Buscar</label>
+                    <input
+                        type="search"
+                        id="filtroActTexto"
+                        class="form-control"
+                        placeholder="Título, descripción o colaborador" />
+                </div>
+
+                <div>
+                    <label for="filtroActEstatus" class="form-label">Estatus</label>
+                    <select id="filtroActEstatus" class="form-select">
+                        <option value="">Todos</option>
+                        <option>Por hacer</option>
+                        <option>En progreso</option>
+                        <option>Hecho</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filtroActTipo" class="form-label">Tipo</label>
+                    <select id="filtroActTipo" class="form-select">
+                        <option value="">Todos</option>
+                        <option>Actividad</option>
+                        <option>Tarea</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filtroActPrioridad" class="form-label">Prioridad</label>
+                    <select id="filtroActPrioridad" class="form-select">
+                        <option value="">Todas</option>
+                        <option>Baja</option>
+                        <option>Media</option>
+                        <option>Alta</option>
+                    </select>
+                </div>
+
+                <div class="actividades-filtros-acciones">
+                    <button
+                        type="button"
+                        id="btnLimpiarFiltrosActividades"
+                        class="btn btn-outline-secondary">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table id="tablaActividades" class="table table-hover mb-0">
                     <thead>

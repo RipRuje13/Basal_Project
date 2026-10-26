@@ -25,3 +25,44 @@ body {
     gap: 0.25rem;
     flex-wrap: nowrap;
 }
+
+/* ================================
+   Filtros de actividades (grid responsivo, como en compras).
+   ================================ */
+.actividades-filtros {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 2fr)
+        minmax(150px, 1fr)
+        minmax(150px, 1fr)
+        minmax(150px, 1fr)
+        minmax(96px, auto);
+    gap: 0.5rem;
+    align-items: end;
+    max-width: 100%;
+}
+
+.actividades-filtros > * {
+    min-width: 0;
+}
+
+.actividades-filtros .form-control,
+.actividades-filtros .form-select {
+    width: 100%;
+}
+
+.actividades-filtros-acciones {
+    display: grid;
+}
+
+@media (max-width: 992px) {
+    .actividades-filtros {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .actividades-filtros {
+        grid-template-columns: 1fr;
+    }
+}
