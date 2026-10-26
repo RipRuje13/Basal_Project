@@ -408,6 +408,23 @@
     // Máximo de actividades pendientes visibles en la agenda.
     const MAX_ACTIVIDADES_AGENDA = 5;
 
+    // Etiqueta corta del calendario para mostrar al final del aviso y evitar
+    // confusión sobre a qué calendario pertenece.
+    function etiquetaCalendario(cal) {
+
+        const etiquetas = {
+            compras_mensuales: 'Compra mensual',
+            compras_bimestrales: 'Papelería',
+            mantenimientos: 'Mantenimiento'
+        };
+
+        const etiqueta =
+            etiquetas[cal.clave] || cal.nombre || cal.clave || '';
+
+        return escaparHtml(etiqueta);
+
+    }
+
     // Recolecta los avisos de calendario de la semana actual (lun–vie, de hoy
     // en adelante). Devuelve un array de { fecha, html, color_valor, destino }
     // ordenado por fecha ascendente. Degrada a [] si la fuente falla.
@@ -439,18 +456,16 @@
                     const prefijo = esHoy ? 'Hoy' : nombreDiaSemana(fecha);
                     const motivo = escaparHtml(dia.motivo_nombre);
 
-                    let html;
-                    if (cal.clave === 'mantenimientos') {
-                        // En mantenimientos el motivo ES el departamento.
-                        html = esHoy
-                            ? `Hoy — Mantenimiento: ${motivo}`
-                            : `${prefijo} — Mantenimiento: ${motivo}`;
-                    }
-                    else {
-                        html = esHoy
-                            ? `Hoy: ${motivo}`
-                            : `${prefijo}: ${motivo}`;
-                    }
+                    // Etiqueta que indica a qué calendario pertenece el aviso,
+                    // para evitar confusión entre calendarios.
+                    const etiquetaCal = etiquetaCalendario(cal);
+
+                    const base = esHoy
+                        ? `Hoy: ${motivo}`
+                        : `${prefijo}: ${motivo}`;
+
+                    const html =
+                        `${base} <span class="badge bg-secondary">${etiquetaCal}</span>`;
 
                     avisos.push({
                         fecha,
