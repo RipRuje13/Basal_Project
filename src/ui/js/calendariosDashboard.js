@@ -11,6 +11,7 @@
 (function () {
 
     const calendariosService = require('../../services/calendarios.service');
+    const serviciosWebService = require('../../services/serviciosWeb.service');
 
     // escaparHtml identica a dashboard.js/gestion.js: reemplaza & < > "
     // (NO la comilla simple '), por eso todos los atributos generados por
@@ -144,27 +145,76 @@
             etiqueta.textContent = NOMBRES_MESES[mes - 1] + ' ' + anio;
         }
 
-        let dias = [];
-
-        try {
-            dias = await calendariosService.obtenerDiasPorCalendarioYMes(
-                clave, anio, mes
-            );
-        }
-        catch (error) {
-            console.error('Error cargando dias del calendario:', error);
-            dias = [];
-        }
-
-        dias = Array.isArray(dias) ? dias : [];
-
         const marcas = new Map();
-        dias.forEach((d) => {
-            marcas.set(d.fecha, {
-                color_valor: d.color_valor,
-                motivo_nombre: d.motivo_nombre
+
+        if (clave === 'servicios_web') {
+
+            // Servicios Web: no hay filas en calendario_dias; se pintan los
+            // vencimientos de los dominios con color dinámico por proximidad.
+            let dominios = [];
+
+            try {
+                dominios = await serviciosWebService.obtenerDominiosPorMes(anio, mes);
+            }
+            catch (error) {
+                console.error('Error cargando dominios del calendario:', error);
+                dominios = [];
+            }
+
+            dominios = Array.isArray(dominios) ? dominios : [];
+
+            // fechaIso tiene firma (anio, mes, dia) con mes en 1..12; se
+            // compone hoyIso a partir de un Date local.
+            const hoyD = new Date();
+            const hoyIso = fechaIso(
+                hoyD.getFullYear(),
+                hoyD.getMonth() + 1,
+                hoyD.getDate()
+            );
+
+            dominios.forEach((d) => {
+                const fecha = d.fecha_vencimiento;
+                const diffNuevo = serviciosWebService.diffEnDiasIso(fecha, hoyIso);
+                const previo = marcas.get(fecha);
+
+                // Colisión de fechas: conservar el MÁS urgente (menor diff).
+                if (previo && previo.diff !== null
+                    && (diffNuevo === null || diffNuevo >= previo.diff)) {
+                    return;
+                }
+
+                marcas.set(fecha, {
+                    color_valor: serviciosWebService.colorPorVencimiento(fecha, hoyIso),
+                    motivo_nombre: d.dominio,
+                    diff: diffNuevo
+                });
             });
-        });
+
+        }
+        else {
+
+            let dias = [];
+
+            try {
+                dias = await calendariosService.obtenerDiasPorCalendarioYMes(
+                    clave, anio, mes
+                );
+            }
+            catch (error) {
+                console.error('Error cargando dias del calendario:', error);
+                dias = [];
+            }
+
+            dias = Array.isArray(dias) ? dias : [];
+
+            dias.forEach((d) => {
+                marcas.set(d.fecha, {
+                    color_valor: d.color_valor,
+                    motivo_nombre: d.motivo_nombre
+                });
+            });
+
+        }
 
         contenedor.innerHTML = construirCuadricula(anio, mes, marcas);
     }

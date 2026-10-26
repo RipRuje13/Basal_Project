@@ -14,6 +14,7 @@
     const almacenService = require('../../services/almacen.service');
     const calendariosService = require('../../services/calendarios.service');
     const actividadesService = require('../../services/actividades.service');
+    const serviciosWebService = require('../../services/serviciosWeb.service');
 
     // Escapado de texto de usuario antes de inyectarlo con innerHTML.
     // Copia textual del helper de compras.js (reemplaza & < > ").
@@ -415,7 +416,8 @@
         const etiquetas = {
             compras_mensuales: 'Compra mensual',
             compras_bimestrales: 'Papelería',
-            mantenimientos: 'Mantenimiento'
+            mantenimientos: 'Mantenimiento',
+            servicios_web: 'Servicios Web'
         };
 
         const etiqueta =
@@ -437,6 +439,44 @@
             const lista = Array.isArray(calendarios) ? calendarios : [];
 
             for (const cal of lista) {
+
+                // Servicios Web: los avisos salen de los dominios (por fecha de
+                // vencimiento), no de calendario_dias. Produce los mismos objetos
+                // { fecha, html, color_valor, destino } que la rama genérica.
+                if (cal.clave === 'servicios_web') {
+
+                    let dominios = [];
+                    try {
+                        dominios = await serviciosWebService.obtenerDominios();
+                    }
+                    catch (e) {
+                        console.error('[dashboard] dominios', e);
+                        continue;
+                    }
+
+                    (Array.isArray(dominios) ? dominios : []).forEach((d) => {
+
+                        const fecha = (d.fecha_vencimiento ?? '').toString().trim();
+                        if (!eventoEntraEnAgenda(fecha, hoyIso)) return;
+
+                        const esHoy = fecha === hoyIso;
+                        const prefijo = esHoy ? 'Hoy' : nombreDiaSemana(fecha);
+                        const dominio = escaparHtml(d.dominio);
+                        const base = `${prefijo}: vence ${dominio}`;
+                        const html =
+                            `${base} <span class="badge bg-secondary">Servicios Web</span>`;
+
+                        avisos.push({
+                            fecha,
+                            html,
+                            color_valor: serviciosWebService.colorPorVencimiento(fecha, hoyIso),
+                            destino: './calendarios.html'
+                        });
+
+                    });
+
+                    continue;
+                }
 
                 let dias = [];
                 try {
