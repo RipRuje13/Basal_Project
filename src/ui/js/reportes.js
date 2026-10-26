@@ -1,5 +1,6 @@
 const comprasService = require('../../services/compras.service');
 const almacenService = require('../../services/almacen.service');
+const actividadesService = require('../../services/actividades.service');
 
 // ================================
 // REPORTES
@@ -491,7 +492,249 @@ async function initReportes() {
         inventarioDept.labels.length > 0
     );
 
+    // ============ ACTIVIDADES ============
+
+    let actividades = [];
+
+    try {
+        actividades = await actividadesService.obtenerActividades();
+    }
+    catch (error) {
+        console.error('Error cargando actividades:', error);
+    }
+
+    actividades = Array.isArray(actividades) ? actividades : [];
+
+    renderReportesActividades(actividades);
+
     return true;
+}
+
+// Construye los KPIs y gráficas de la sección Actividades.
+function renderReportesActividades(actividades) {
+
+    const esHecho = (a) =>
+        normalizar(a.estatus) === 'hecho';
+
+    // ---------- KPIs ----------
+    const total = actividades.length;
+
+    const completadas =
+        actividades.filter(esHecho).length;
+
+    const pendientes =
+        total - completadas;
+
+    const avance =
+        total > 0
+            ? Math.round((completadas / total) * 100)
+            : 0;
+
+    setKpi('kpiActTotal', total);
+    setKpi('kpiActPendientes', pendientes);
+    setKpi('kpiActCompletadas', completadas);
+
+    const elAvance = document.getElementById('kpiActAvance');
+    if (elAvance) {
+        elAvance.textContent = `${avance}%`;
+    }
+
+    // 1) Por estatus (doughnut)
+    const porEstatus = ordenarMapa(
+        contarPor(actividades, (a) => (a.estatus ?? '').toString().trim()),
+        { orden: 'desc' }
+    );
+    crearChart(
+        'chartActEstatus',
+        {
+            type: 'doughnut',
+            data: {
+                labels: porEstatus.labels,
+                datasets: [{
+                    data: porEstatus.data,
+                    backgroundColor: porEstatus.labels.map(colorEstatusActividad)
+                }]
+            },
+            options: opcionesBase({
+                plugins: { legend: { position: 'bottom' } }
+            })
+        },
+        porEstatus.labels.length > 0
+    );
+
+    // 2) Por departamento (barras, conteo)
+    const porDepartamento = ordenarMapa(
+        contarPor(
+            actividades,
+            (a) => (a.departamento ?? '').toString().trim() || 'Sin departamento'
+        ),
+        { orden: 'desc' }
+    );
+    crearChart(
+        'chartActDepartamento',
+        {
+            type: 'bar',
+            data: {
+                labels: porDepartamento.labels,
+                datasets: [{
+                    label: 'Actividades',
+                    data: porDepartamento.data,
+                    backgroundColor: coloresPara(porDepartamento.labels.length)
+                }]
+            },
+            options: opcionesBase({
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            })
+        },
+        porDepartamento.labels.length > 0
+    );
+
+    // 3) Por prioridad (doughnut)
+    const porPrioridad = ordenarMapa(
+        contarPor(actividades, (a) => (a.prioridad ?? '').toString().trim()),
+        { orden: 'desc' }
+    );
+    crearChart(
+        'chartActPrioridad',
+        {
+            type: 'doughnut',
+            data: {
+                labels: porPrioridad.labels,
+                datasets: [{
+                    data: porPrioridad.data,
+                    backgroundColor: porPrioridad.labels.map(colorPrioridadActividad)
+                }]
+            },
+            options: opcionesBase({
+                plugins: { legend: { position: 'bottom' } }
+            })
+        },
+        porPrioridad.labels.length > 0
+    );
+
+    // 4) Por tipo (doughnut)
+    const porTipo = ordenarMapa(
+        contarPor(actividades, (a) => (a.tipo ?? '').toString().trim()),
+        { orden: 'desc' }
+    );
+    crearChart(
+        'chartActTipo',
+        {
+            type: 'doughnut',
+            data: {
+                labels: porTipo.labels,
+                datasets: [{
+                    data: porTipo.data,
+                    backgroundColor: coloresPara(porTipo.labels.length)
+                }]
+            },
+            options: opcionesBase({
+                plugins: { legend: { position: 'bottom' } }
+            })
+        },
+        porTipo.labels.length > 0
+    );
+
+    // 5) Tendencia mensual de actividades creadas (linea, conteo por YYYY-MM)
+    const mapaMensual = new Map();
+    actividades.forEach((a) => {
+        const mes = mesDeFecha(a.fecha_creacion);
+        if (!mes) return;
+        mapaMensual.set(mes, (mapaMensual.get(mes) ?? 0) + 1);
+    });
+    const tendencia = ordenarMapa(mapaMensual, { orden: 'clave' });
+    crearChart(
+        'chartActTendencia',
+        {
+            type: 'line',
+            data: {
+                labels: tendencia.labels,
+                datasets: [{
+                    label: 'Actividades creadas',
+                    data: tendencia.data,
+                    borderColor: '#1f3c88',
+                    backgroundColor: 'rgba(31, 60, 136, 0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#c9a227'
+                }]
+            },
+            options: opcionesBase({
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            })
+        },
+        tendencia.labels.length > 0
+    );
+
+    // 6) Tiempo promedio de resolución (de creación a 'Hecho', en días)
+    renderTiempoPromedioActividades(actividades);
+}
+
+// Color fijo por estatus (coherente con el semáforo de la app).
+function colorEstatusActividad(estatus) {
+    const v = normalizar(estatus);
+    if (v === 'por hacer') return '#9ca3af';
+    if (v === 'en progreso') return '#f59e0b';
+    if (v === 'hecho') return '#22c55e';
+    return '#8d99ae';
+}
+
+// Color fijo por prioridad.
+function colorPrioridadActividad(prioridad) {
+    const v = normalizar(prioridad);
+    if (v === 'alta') return '#ef4444';
+    if (v === 'media') return '#f59e0b';
+    if (v === 'baja') return '#22c55e';
+    return '#8d99ae';
+}
+
+// Calcula y muestra el tiempo promedio (días) entre fecha_creacion y
+// fecha_hecho de las actividades completadas que tengan ambos sellos.
+function renderTiempoPromedioActividades(actividades) {
+
+    const elValor = document.getElementById('kpiActTiempoPromedio');
+    const elDetalle = document.getElementById('kpiActTiempoDetalle');
+
+    const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+    const duraciones = [];
+
+    actividades.forEach((a) => {
+        if (normalizar(a.estatus) !== 'hecho') return;
+        if (!a.fecha_creacion || !a.fecha_hecho) return;
+
+        const inicio = new Date(a.fecha_creacion);
+        const fin = new Date(a.fecha_hecho);
+
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return;
+
+        const dias = (fin.getTime() - inicio.getTime()) / MS_POR_DIA;
+        if (dias >= 0) {
+            duraciones.push(dias);
+        }
+    });
+
+    if (!elValor) return;
+
+    if (!duraciones.length) {
+        elValor.textContent = '—';
+        if (elDetalle) {
+            elDetalle.textContent = 'Aún no hay actividades completadas con fechas.';
+        }
+        return;
+    }
+
+    const promedio =
+        duraciones.reduce((acc, d) => acc + d, 0) / duraciones.length;
+
+    elValor.textContent = promedio.toFixed(1);
+
+    if (elDetalle) {
+        elDetalle.textContent =
+            `Calculado sobre ${duraciones.length} actividad${duraciones.length === 1 ? '' : 'es'} completada${duraciones.length === 1 ? '' : 's'}.`;
+    }
 }
 
 function setKpi(id, valor) {

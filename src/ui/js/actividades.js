@@ -245,39 +245,6 @@ function initActividades() {
     }
 
     // =====================================
-    // RESUMEN DEL DÍA
-    // =====================================
-
-    // Cuenta las actividades CREADAS HOY por estatus y actualiza las tarjetas.
-    // El resumen refleja el día real, no el filtro activo.
-    function actualizarResumen() {
-
-        const hoy =
-            new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-
-        const deHoy =
-            actividadesCache.filter((a) =>
-                (a.fecha_creacion ?? '').toString().slice(0, 10) === hoy
-            );
-
-        const contar = (estatus) =>
-            deHoy.filter((a) =>
-                (a.estatus ?? '').trim() === estatus
-            ).length;
-
-        const setTexto = (id, valor) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = String(valor);
-        };
-
-        setTexto('resumenTotalHoy', deHoy.length);
-        setTexto('resumenPorHacer', contar('Por hacer'));
-        setTexto('resumenEnProgreso', contar('En progreso'));
-        setTexto('resumenHecho', contar('Hecho'));
-
-    }
-
-    // =====================================
     // PAGINACIÓN
     // =====================================
 
@@ -508,8 +475,6 @@ function initActividades() {
                 await actividadesService.obtenerActividades();
 
             actividadesCache = actividades;
-
-            actualizarResumen();
 
             renderPaginaActividades();
 
