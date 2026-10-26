@@ -1,0 +1,27 @@
+/* ================================
+   Scroll global de la ventana
+   Muestra la barra de desplazamiento cuando el contenido
+   no cabe en el tamano actual de la ventana.
+   ================================ */
+html,
+body {
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Separacion entre las tarjetas */
+.card {
+    margin-bottom: 1rem;
+}
+
+/* Celda de acciones: agrupa los botones de estatus y edición */
+#tablaActividades .action-cell {
+    white-space: nowrap;
+}
+
+#tablaActividades .action-buttons {
+    display: inline-flex;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+}
