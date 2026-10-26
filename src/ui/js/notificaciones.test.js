@@ -168,3 +168,60 @@ test('cuerpo de mantenimientos menciona el departamento', () => {
     assert.match(r[0].cuerpo, /departamento/);
     assert.match(r[0].cuerpo, /Sistemas/);
 });
+
+// Evento base de dominios (Servicios Web), ya normalizado por el COALESCE.
+function eventoDominio(overrides) {
+    return Object.assign({
+        dia_id: 'dom-3',
+        calendario_clave: 'servicios_web',
+        calendario_nombre: 'Servicios Web',
+        fecha: '2024-06-10',
+        motivo_id: null,
+        motivo_nombre: 'ejemplo.com',
+        motivo_origen: 'servicios_web',
+        activo: 1,
+        dias_antelacion: 1,
+        hora_recordatorio: '09:00',
+        repetir_cada_horas: 0,
+        recordar_dias_previos: 0
+    }, overrides || {});
+}
+
+test('dominio: aviso del día usa "Vence hoy el dominio ..."', () => {
+    const ev = eventoDominio({ fecha: '2024-06-10', dias_antelacion: 1 });
+    const r = calcularNotificacionesPendientes(ev, enFechaHora('2024-06-10', 9, 2));
+    assert.strictEqual(r.length, 1);
+    assert.strictEqual(r[0].titulo, 'Servicios Web');
+    assert.match(r[0].cuerpo, /^Vence hoy el dominio «.+» \(\d{4}-\d{2}-\d{2}\)\.$/);
+});
+
+test('dominio: aviso de antelación a 1 día usa singular "día"', () => {
+    const ev = eventoDominio({ fecha: '2024-06-11', dias_antelacion: 1 });
+    const r = calcularNotificacionesPendientes(ev, enFechaHora('2024-06-10', 9, 2));
+    assert.strictEqual(r.length, 1);
+    assert.strictEqual(r[0].titulo, 'Servicios Web');
+    assert.match(r[0].cuerpo, /^Vence el dominio «.+» en 1 día \(\d{4}-\d{2}-\d{2}\)\.$/);
+});
+
+test('dominio: borde superior de antelación configurable (fecha=hoy+5, antelacion=5)', () => {
+    const ev = eventoDominio({
+        fecha: '2024-06-15',
+        dias_antelacion: 5,
+        recordar_dias_previos: 0,
+        hora_recordatorio: '09:00',
+        activo: 1
+    });
+    const r = calcularNotificacionesPendientes(ev, enFechaHora('2024-06-10', 9, 2));
+    assert.strictEqual(r.length, 1);
+    assert.match(r[0].cuerpo, /^Vence el dominio «.+» en 5 días \(\d{4}-\d{2}-\d{2}\)\.$/);
+});
+
+test('dominio: antelación baja no dispara vencimiento lejano (fecha=hoy+5, antelacion=1)', () => {
+    const ev = eventoDominio({
+        fecha: '2024-06-15',
+        dias_antelacion: 1,
+        recordar_dias_previos: 0
+    });
+    const r = calcularNotificacionesPendientes(ev, enFechaHora('2024-06-10', 9, 2));
+    assert.deepStrictEqual(r, []);
+});
