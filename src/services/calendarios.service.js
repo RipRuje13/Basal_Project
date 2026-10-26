@@ -1,4 +1,5 @@
 const { getConnection } = require('../database/connection');
+const serviciosWebService = require('./serviciosWeb.service');
 
 const db = getConnection();
 
@@ -111,7 +112,8 @@ function esFechaReal(fecha) {
 const seedCalendarios = [
     { clave: 'compras_mensuales', nombre: 'Formato de Compras Mensuales' },
     { clave: 'compras_bimestrales', nombre: 'Compras bimestrales (Papelería)' },
-    { clave: 'mantenimientos', nombre: 'Programa Anual de Mantenimientos' }
+    { clave: 'mantenimientos', nombre: 'Programa Anual de Mantenimientos' },
+    { clave: 'servicios_web', nombre: 'Servicios Web' }
 ];
 
 // Autoridad única de defaults para los ajustes de notificación. Alimenta el
@@ -923,10 +925,15 @@ async function guardarAjusteNotificacion(ajuste) {
     );
 
     const esMantenimientos = calendario && calendario.clave === 'mantenimientos';
+    // Servicios Web: un único ajuste para todos los dominios. Usa el centinela
+    // motivo_id = 0 (AUTOINCREMENT nunca genera 0, por lo que no colisiona).
+    const esServiciosWeb = calendario && calendario.clave === 'servicios_web';
 
     let motivoId = null;
 
-    if (
+    if (esServiciosWeb) {
+        motivoId = 0;
+    } else if (
         esMantenimientos
         && datos.motivo != null
         && !/^\d+$/.test(String(datos.motivo))
@@ -937,7 +944,7 @@ async function guardarAjusteNotificacion(ajuste) {
         motivoId = Number(datos.motivo);
     }
 
-    if (!motivoId) {
+    if (!esServiciosWeb && !motivoId) {
         throw new Error('Debe seleccionar un motivo o departamento.');
     }
 
@@ -1010,7 +1017,7 @@ async function obtenerEventosParaNotificar() {
 
     await initPromise;
 
-    return all(`
+    const eventosCalendario = await all(`
         SELECT
             d.id AS dia_id,
             d.calendario_id,
@@ -1035,6 +1042,15 @@ async function obtenerEventosParaNotificar() {
             AND d.fecha <= date('now', '+365 day')
         ORDER BY d.fecha ASC
     `);
+
+    // UNION en JS (opción A del diseño §7): el SELECT de calendario_dias NO se
+    // toca; los eventos sintéticos de dominios (Servicios Web) se concatenan a
+    // la lista homogénea que consume el scheduler. Dependencia acíclica:
+    // calendarios.service -> serviciosWeb.service.
+    const eventosDominios =
+        await serviciosWebService.obtenerEventosDominiosParaNotificar();
+
+    return eventosCalendario.concat(eventosDominios);
 
 }
 

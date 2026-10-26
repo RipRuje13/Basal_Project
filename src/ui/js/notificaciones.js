@@ -61,6 +61,21 @@
         const n = diasRestantes;
         const plural = n === 1 ? '' : 's';
 
+        // NUEVO: avisos de dominios (Servicios Web). Rama aditiva; no toca las otras.
+        if (evento.motivo_origen === 'servicios_web') {
+            const titulo = 'Servicios Web';
+            if (tipo === 'dia') {
+                return {
+                    titulo,
+                    cuerpo: `Vence hoy el dominio «${nombre}» (${fecha}).`
+                };
+            }
+            return {
+                titulo,
+                cuerpo: `Vence el dominio «${nombre}» en ${n} día${plural} (${fecha}).`
+            };
+        }
+
         if (esDepto) {
             const titulo = `Mantenimiento: ${evento.calendario_nombre}`;
             if (tipo === 'dia') {
