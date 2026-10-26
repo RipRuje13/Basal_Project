@@ -21,6 +21,7 @@
     if (page === "reportes.html") return "reportes";
     if (page === "gestion.html") return "gestion";
     if (page === "calendarios.html") return "calendarios";
+    if (page === "actividades.html") return "actividades";
     return "dashboard";
   }
 
@@ -32,6 +33,7 @@
     reportes: "Reportes",
     gestion: "Gestión",
     calendarios: "Calendarios",
+    actividades: "Actividades",
   };
 
   async function bootstrapContent() {
@@ -51,6 +53,7 @@
       reportes: "navReportes",
       gestion: "navGestion",
       calendarios: "navCalendarios",
+      actividades: "navActividades",
     };
 
     if (navbarMount) {
@@ -76,6 +79,7 @@
       reportes: "../partials/reportes-fragment.html",
       gestion: "../partials/gestion-fragment.html",
       calendarios: "../partials/calendarios-fragment.html",
+      actividades: "../partials/actividades-fragment.html",
     };
 
     const contentMount = document.getElementById("contentArea");
