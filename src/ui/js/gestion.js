@@ -243,6 +243,109 @@ function renderUbicaciones(rows) {
 }
 
 // =====================================
+// EDICIÓN EN LÍNEA (reemplaza window.prompt, deshabilitado en Electron)
+// =====================================
+
+// Convierte la primera celda de una fila en un input editable con botones
+// Guardar / Cancelar. Al guardar llama a actualizarFn(id, nombre) y recargaFn().
+function editarEnLinea(fila, id, actualizarFn, recargarFn) {
+
+    if (!fila) return;
+
+    const celdaNombre =
+        fila.querySelector('td');
+
+    if (!celdaNombre) return;
+
+    // Evitar entrar dos veces en modo edición sobre la misma fila.
+    if (celdaNombre.querySelector('.input-editar-nombre')) {
+        return;
+    }
+
+    const nombreActual =
+        celdaNombre.textContent.trim();
+
+    celdaNombre.innerHTML = `
+        <div class="input-group input-group-sm">
+            <input
+                type="text"
+                class="form-control input-editar-nombre"
+                value="${escaparHtml(nombreActual)}" />
+            <button type="button" class="btn btn-success btn-guardar-edicion">
+                Guardar
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-cancelar-edicion">
+                Cancelar
+            </button>
+        </div>
+    `;
+
+    const input =
+        celdaNombre.querySelector('.input-editar-nombre');
+
+    if (input) {
+        input.focus();
+        input.select();
+    }
+
+    const guardar = async () => {
+
+        const nuevoNombre =
+            input ? input.value : '';
+
+        try {
+
+            await actualizarFn(id, nuevoNombre);
+
+            await recargaFnSeguro(recargarFn);
+
+        }
+        catch (error) {
+
+            console.error(error);
+            alert(error.message);
+
+        }
+
+    };
+
+    celdaNombre
+        .querySelector('.btn-guardar-edicion')
+        .addEventListener('click', guardar);
+
+    celdaNombre
+        .querySelector('.btn-cancelar-edicion')
+        .addEventListener('click', () => {
+            recargaFnSeguro(recargarFn);
+        });
+
+    if (input) {
+
+        input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                guardar();
+            }
+            else if (ev.key === 'Escape') {
+                recargaFnSeguro(recargarFn);
+            }
+        });
+
+    }
+
+}
+
+// Llama a la función de recarga de forma segura (ignora errores de recarga).
+async function recargaFnSeguro(recargarFn) {
+    try {
+        await recargarFn();
+    }
+    catch (error) {
+        console.error(error);
+    }
+}
+
+// =====================================
 // CARGAR
 // =====================================
 
@@ -361,41 +464,12 @@ if (tbodyDepartamentos) {
 
                 e.preventDefault();
 
-                try {
-
-                    const fila =
-                        btnEditar.closest('tr');
-
-                    const nombreActual =
-                        fila
-                            ? fila.querySelector('td').textContent.trim()
-                            : '';
-
-                    const nuevoNombre =
-                        prompt(
-                            'Nuevo nombre del departamento:',
-                            nombreActual
-                        );
-
-                    if (nuevoNombre === null) {
-                        return;
-                    }
-
-                    await gestionService.actualizarDepartamento(
-                        btnEditar.dataset.id,
-                        nuevoNombre
-                    );
-
-                    await cargarDepartamentos();
-
-                }
-                catch (error) {
-
-                    console.error(error);
-
-                    alert(error.message);
-
-                }
+                editarEnLinea(
+                    btnEditar.closest('tr'),
+                    btnEditar.dataset.id,
+                    gestionService.actualizarDepartamento,
+                    cargarDepartamentos
+                );
 
                 return;
 
@@ -491,41 +565,12 @@ if (tbodyUnidades) {
 
                 e.preventDefault();
 
-                try {
-
-                    const fila =
-                        btnEditar.closest('tr');
-
-                    const nombreActual =
-                        fila
-                            ? fila.querySelector('td').textContent.trim()
-                            : '';
-
-                    const nuevoNombre =
-                        prompt(
-                            'Nuevo nombre de la unidad de negocio:',
-                            nombreActual
-                        );
-
-                    if (nuevoNombre === null) {
-                        return;
-                    }
-
-                    await gestionService.actualizarUnidad(
-                        btnEditar.dataset.id,
-                        nuevoNombre
-                    );
-
-                    await cargarUnidades();
-
-                }
-                catch (error) {
-
-                    console.error(error);
-
-                    alert(error.message);
-
-                }
+                editarEnLinea(
+                    btnEditar.closest('tr'),
+                    btnEditar.dataset.id,
+                    gestionService.actualizarUnidad,
+                    cargarUnidades
+                );
 
                 return;
 
@@ -621,41 +666,12 @@ if (tbodyUbicaciones) {
 
                 e.preventDefault();
 
-                try {
-
-                    const fila =
-                        btnEditar.closest('tr');
-
-                    const nombreActual =
-                        fila
-                            ? fila.querySelector('td').textContent.trim()
-                            : '';
-
-                    const nuevoNombre =
-                        prompt(
-                            'Nuevo nombre de la ubicación:',
-                            nombreActual
-                        );
-
-                    if (nuevoNombre === null) {
-                        return;
-                    }
-
-                    await gestionService.actualizarUbicacion(
-                        btnEditar.dataset.id,
-                        nuevoNombre
-                    );
-
-                    await cargarUbicaciones();
-
-                }
-                catch (error) {
-
-                    console.error(error);
-
-                    alert(error.message);
-
-                }
+                editarEnLinea(
+                    btnEditar.closest('tr'),
+                    btnEditar.dataset.id,
+                    gestionService.actualizarUbicacion,
+                    cargarUbicaciones
+                );
 
                 return;
 
