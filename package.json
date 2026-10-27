@@ -4,11 +4,41 @@
   "description": "",
   "main": "src/main/index.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "build": {
+    "appId": "com.basal.inventario",
+    "productName": "Sistema Inventario SIN",
+    "win": {
+      "target": "nsis",
+      "icon": "data/almacen-fotos/icono-SIN.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sistema Inventario SIN"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "data/almacen-fotos/icono-SIN.ico",
+        "to": "icono-SIN.ico"
+      },
+      {
+        "from": "data/almacen-fotos/Not-Found.png",
+        "to": "almacen-fotos/Not-Found.png"
+      }
+    ]
+  },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
     "electron": "^42.3.3",
@@ -16,6 +46,7 @@
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
+    "electron-builder": "^24.13.3",
     "electron-rebuild": "^2.0.3"
   }
 }

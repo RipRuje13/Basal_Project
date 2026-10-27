@@ -7,6 +7,7 @@ function createWindow(){
     window = new BrowserWindow({
         width: 1024,
         height: 800,
+        icon: path.join(__dirname, '..', '..', 'data', 'almacen-fotos', 'icono-SIN.ico'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false

@@ -50,8 +50,10 @@ data/*.sqlite3
 # Se ignora el contenido con /* (no el directorio entero) para poder
 # versionar Not-Found.png como excepcion.
 data/almacen-fotos/*
-# ...excepto la imagen de reemplazo "no encontrada", que es un asset de la app
+# ...excepto los assets de la app que viven en esta carpeta
 !data/almacen-fotos/Not-Found.png
+!data/almacen-fotos/icono-SIN.png
+!data/almacen-fotos/icono-SIN.ico
 
 # ===============================
 #  Variables de entorno y secretos
