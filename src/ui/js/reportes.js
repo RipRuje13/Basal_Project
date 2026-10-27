@@ -1,6 +1,7 @@
 const comprasService = require('../../services/compras.service');
 const almacenService = require('../../services/almacen.service');
 const actividadesService = require('../../services/actividades.service');
+const { ipcRenderer } = require('electron');
 
 // ================================
 // REPORTES
@@ -9,6 +10,14 @@ const actividadesService = require('../../services/actividades.service');
 // Instancias de Chart activas, para destruirlas si initReportes() corre
 // mas de una vez (evita el error "Canvas is already in use").
 const chartsActivos = {};
+
+// Datasets crudos cacheados tras cargar los reportes, para reutilizarlos al
+// generar el PDF sin volver a consultar la base de datos.
+let datosReporte = {
+    compras: [],
+    productos: [],
+    actividades: []
+};
 
 // Paleta coherente (azules + dorado/acento).
 const PALETA = [
@@ -227,6 +236,10 @@ async function initReportes() {
 
     compras = Array.isArray(compras) ? compras : [];
     productos = Array.isArray(productos) ? productos : [];
+
+    // Cachear para el PDF.
+    datosReporte.compras = compras;
+    datosReporte.productos = productos;
 
     // ---------- KPIs ----------
     const totalSolicitudes = compras.length;
@@ -505,7 +518,17 @@ async function initReportes() {
 
     actividades = Array.isArray(actividades) ? actividades : [];
 
+    // Cachear para el PDF.
+    datosReporte.actividades = actividades;
+
     renderReportesActividades(actividades);
+
+    // Enlazar el botón de generar PDF (una sola vez).
+    const btnPdf = document.getElementById('btnGenerarPdfReportes');
+    if (btnPdf && btnPdf.dataset.listo !== '1') {
+        btnPdf.dataset.listo = '1';
+        btnPdf.addEventListener('click', generarPdfReportes);
+    }
 
     return true;
 }
@@ -741,6 +764,256 @@ function setKpi(id, valor) {
     const el = document.getElementById(id);
     if (el) {
         el.textContent = Number(valor).toLocaleString('es-MX');
+    }
+}
+
+// =====================================
+// GENERACIÓN DE PDF (reporte ejecutivo)
+// =====================================
+
+function escaparHtmlPdf(valor) {
+    return (valor ?? '')
+        .toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Construye una tabla HTML de dos columnas (etiqueta, valor) desde un objeto
+// {labels, data} ya ordenado.
+function tablaDosColumnas(datos, encClave, encValor) {
+
+    if (!datos.labels.length) {
+        return '<p class="vacio">Sin datos disponibles.</p>';
+    }
+
+    const filas = datos.labels
+        .map((label, i) =>
+            `<tr><td>${escaparHtmlPdf(label)}</td><td class="num">${escaparHtmlPdf(datos.data[i])}</td></tr>`
+        )
+        .join('');
+
+    return `
+        <table>
+            <thead><tr><th>${escaparHtmlPdf(encClave)}</th><th class="num">${escaparHtmlPdf(encValor)}</th></tr></thead>
+            <tbody>${filas}</tbody>
+        </table>
+    `;
+}
+
+// Genera una frase explicativa: el elemento con mayor valor y su porcentaje
+// sobre el total. Si no hay datos, devuelve una nota neutra.
+function explicacionTop(datos, plantilla) {
+
+    if (!datos.labels.length) {
+        return 'No hay datos registrados para este indicador.';
+    }
+
+    const total = datos.data.reduce((acc, n) => acc + toNumero(n), 0);
+
+    // El dataset ya viene ordenado desc en la mayoría de los casos; buscamos
+    // el máximo de forma robusta.
+    let maxIdx = 0;
+    datos.data.forEach((n, i) => {
+        if (toNumero(n) > toNumero(datos.data[maxIdx])) maxIdx = i;
+    });
+
+    const etiqueta = datos.labels[maxIdx];
+    const valor = toNumero(datos.data[maxIdx]);
+    const pct = total > 0 ? Math.round((valor / total) * 100) : 0;
+
+    return plantilla
+        .replace('{top}', escaparHtmlPdf(etiqueta))
+        .replace('{valor}', valor.toLocaleString('es-MX'))
+        .replace('{pct}', pct + '%')
+        .replace('{total}', total.toLocaleString('es-MX'));
+}
+
+// Bloque reutilizable: título de tabla + explicación + tabla.
+function bloqueTabla(titulo, explicacion, tablaHtml) {
+    return `
+        <div class="bloque">
+            <h3>${escaparHtmlPdf(titulo)}</h3>
+            <p class="expl">${explicacion}</p>
+            ${tablaHtml}
+        </div>
+    `;
+}
+
+async function generarPdfReportes() {
+
+    const compras = Array.isArray(datosReporte.compras) ? datosReporte.compras : [];
+    const productos = Array.isArray(datosReporte.productos) ? datosReporte.productos : [];
+    const actividades = Array.isArray(datosReporte.actividades) ? datosReporte.actividades : [];
+
+    const fecha = new Date().toLocaleString('es-MX');
+
+    // ---------- KPIs ----------
+    const totalSolicitudes = compras.length;
+    const totalUnidades = compras.reduce((acc, c) => acc + toNumero(c.cantidad), 0);
+    const totalAlmacen = productos.length;
+    const totalNoFuncionales = productos.filter((p) => esNoFuncional(p.funciona)).length;
+
+    const actTotal = actividades.length;
+    const actHechas = actividades.filter((a) => normalizar(a.estatus) === 'hecho').length;
+    const actPendientes = actTotal - actHechas;
+    const actAvance = actTotal > 0 ? Math.round((actHechas / actTotal) * 100) : 0;
+
+    // ---------- Datasets (reutilizan los mismos cálculos que las gráficas) ----------
+    const deptSolicita = ordenarMapa(sumarPor(compras, 'departamento', 'cantidad'), { orden: 'desc', limite: 10 });
+    const productosMas = ordenarMapa(sumarPor(compras, 'producto', 'cantidad'), { orden: 'desc', limite: 10 });
+    const estatusCompras = ordenarMapa(contarPor(compras, (c) => (c.estatus ?? '').toString().trim()), { orden: 'desc' });
+    const unidad = ordenarMapa(sumarPor(compras, 'unidad_negocio', 'cantidad'), { orden: 'desc' });
+
+    const mapaAverias = new Map();
+    productos.forEach((p) => {
+        if (!esNoFuncional(p.funciona)) return;
+        const dep = (p.departamento ?? '').toString().trim() || 'Sin departamento';
+        mapaAverias.set(dep, (mapaAverias.get(dep) ?? 0) + 1);
+    });
+    const averias = ordenarMapa(mapaAverias, { orden: 'desc' });
+    const inventarioDept = ordenarMapa(
+        contarPor(productos, (p) => (p.departamento ?? '').toString().trim() || 'Sin departamento'),
+        { orden: 'desc' }
+    );
+
+    const actEstatus = ordenarMapa(contarPor(actividades, (a) => (a.estatus ?? '').toString().trim()), { orden: 'desc' });
+    const actDepto = ordenarMapa(contarPor(actividades, (a) => (a.departamento ?? '').toString().trim() || 'Sin departamento'), { orden: 'desc' });
+    const actPrioridad = ordenarMapa(contarPor(actividades, (a) => (a.prioridad ?? '').toString().trim()), { orden: 'desc' });
+    const actTipo = ordenarMapa(contarPor(actividades, (a) => (a.tipo ?? '').toString().trim()), { orden: 'desc' });
+
+    // ---------- HTML del PDF ----------
+    const html = `
+        <!doctype html>
+        <html lang="es"><head><meta charset="UTF-8" />
+        <style>
+            * { font-family: Arial, Helvetica, sans-serif; color: #212529; }
+            body { padding: 24px; }
+            h1 { font-size: 22px; color: #1f3c88; margin: 0 0 2px; }
+            h2 { font-size: 16px; color: #1f3c88; border-bottom: 2px solid #c9a227;
+                 padding-bottom: 4px; margin: 22px 0 10px; }
+            h3 { font-size: 13px; margin: 14px 0 4px; }
+            .meta { font-size: 11px; color: #555; margin-bottom: 6px; }
+            .expl { font-size: 11px; color: #444; margin: 0 0 6px; font-style: italic; }
+            table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 6px; }
+            th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+            th { background: #1f3c88; color: #fff; }
+            td.num, th.num { text-align: right; }
+            tr:nth-child(even) td { background: #f5f7fa; }
+            .kpis { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+            .kpi { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; min-width: 120px; }
+            .kpi .v { font-size: 18px; font-weight: bold; color: #1f3c88; }
+            .kpi .l { font-size: 10px; color: #555; }
+            .vacio { font-size: 11px; color: #777; font-style: italic; }
+            .bloque { page-break-inside: avoid; }
+        </style></head>
+        <body>
+            <h1>Reporte del Sistema de Inventario</h1>
+            <div class="meta">Generado: ${escaparHtmlPdf(fecha)}</div>
+
+            <h2>Resumen ejecutivo</h2>
+            <div class="kpis">
+                <div class="kpi"><div class="v">${totalSolicitudes.toLocaleString('es-MX')}</div><div class="l">Solicitudes de compra</div></div>
+                <div class="kpi"><div class="v">${totalUnidades.toLocaleString('es-MX')}</div><div class="l">Unidades solicitadas</div></div>
+                <div class="kpi"><div class="v">${totalAlmacen.toLocaleString('es-MX')}</div><div class="l">Productos en almacén</div></div>
+                <div class="kpi"><div class="v">${totalNoFuncionales.toLocaleString('es-MX')}</div><div class="l">Equipos no funcionales</div></div>
+                <div class="kpi"><div class="v">${actTotal.toLocaleString('es-MX')}</div><div class="l">Actividades totales</div></div>
+                <div class="kpi"><div class="v">${actPendientes.toLocaleString('es-MX')}</div><div class="l">Actividades pendientes</div></div>
+                <div class="kpi"><div class="v">${actHechas.toLocaleString('es-MX')}</div><div class="l">Actividades completadas</div></div>
+                <div class="kpi"><div class="v">${actAvance}%</div><div class="l">Avance de actividades</div></div>
+            </div>
+
+            <h2>Compras</h2>
+            ${bloqueTabla(
+                'Solicitudes por departamento',
+                'Muestra cuántas unidades ha solicitado cada departamento. ' +
+                explicacionTop(deptSolicita, 'El departamento «{top}» concentra la mayor demanda con {valor} unidades ({pct} del total).'),
+                tablaDosColumnas(deptSolicita, 'Departamento', 'Unidades')
+            )}
+            ${bloqueTabla(
+                'Productos más comprados',
+                'Ranking de los productos con mayor volumen de compra. ' +
+                explicacionTop(productosMas, 'El más solicitado es «{top}» con {valor} unidades ({pct} del total listado).'),
+                tablaDosColumnas(productosMas, 'Producto', 'Unidades')
+            )}
+            ${bloqueTabla(
+                'Compras por estatus',
+                'Distribución de las solicitudes según su estado de avance. ' +
+                explicacionTop(estatusCompras, 'El estatus predominante es «{top}» con {valor} solicitudes ({pct}).'),
+                tablaDosColumnas(estatusCompras, 'Estatus', 'Solicitudes')
+            )}
+            ${bloqueTabla(
+                'Compras por unidad de negocio',
+                'Unidades solicitadas agrupadas por unidad de negocio. ' +
+                explicacionTop(unidad, 'La unidad «{top}» representa el mayor consumo con {valor} unidades ({pct}).'),
+                tablaDosColumnas(unidad, 'Unidad de negocio', 'Unidades')
+            )}
+
+            <h2>Almacén</h2>
+            ${bloqueTabla(
+                'Equipos no funcionales por departamento',
+                'Cantidad de equipos averiados o no funcionales por departamento. ' +
+                explicacionTop(averias, 'El departamento «{top}» acumula la mayor cantidad con {valor} equipos ({pct} de los no funcionales).'),
+                tablaDosColumnas(averias, 'Departamento', 'Equipos no funcionales')
+            )}
+            ${bloqueTabla(
+                'Inventario por departamento',
+                'Número total de equipos registrados en almacén por departamento. ' +
+                explicacionTop(inventarioDept, 'El departamento «{top}» tiene el mayor inventario con {valor} equipos ({pct} del total).'),
+                tablaDosColumnas(inventarioDept, 'Departamento', 'Equipos')
+            )}
+
+            <h2>Actividades</h2>
+            ${bloqueTabla(
+                'Actividades por estatus',
+                'Estado actual de las actividades del equipo de soporte. ' +
+                explicacionTop(actEstatus, 'Predomina el estatus «{top}» con {valor} actividades ({pct}).'),
+                tablaDosColumnas(actEstatus, 'Estatus', 'Actividades')
+            )}
+            ${bloqueTabla(
+                'Actividades por departamento',
+                'Carga de trabajo de soporte atendida por departamento. ' +
+                explicacionTop(actDepto, 'El departamento «{top}» concentra la mayor carga con {valor} actividades ({pct}).'),
+                tablaDosColumnas(actDepto, 'Departamento', 'Actividades')
+            )}
+            ${bloqueTabla(
+                'Actividades por prioridad',
+                'Distribución de actividades según su prioridad. ' +
+                explicacionTop(actPrioridad, 'La prioridad «{top}» es la más frecuente con {valor} actividades ({pct}).'),
+                tablaDosColumnas(actPrioridad, 'Prioridad', 'Actividades')
+            )}
+            ${bloqueTabla(
+                'Actividades por tipo',
+                'Clasificación entre actividades y tareas. ' +
+                explicacionTop(actTipo, 'El tipo «{top}» representa {valor} registros ({pct}).'),
+                tablaDosColumnas(actTipo, 'Tipo', 'Registros')
+            )}
+        </body></html>
+    `;
+
+    const sello = (() => {
+        const n = new Date();
+        const p = (x) => String(x).padStart(2, '0');
+        return `${n.getFullYear()}${p(n.getMonth() + 1)}${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}`;
+    })();
+
+    try {
+        const resultado = await ipcRenderer.invoke('exportar-pdf', {
+            html,
+            nombreSugerido: `reporte_${sello}.pdf`
+        });
+
+        if (resultado && resultado.success) {
+            console.log('Reporte PDF generado en:', resultado.filePath);
+        }
+        else if (resultado && !resultado.canceled) {
+            alert('No fue posible generar el reporte PDF.');
+        }
+    }
+    catch (error) {
+        console.error('Error generando el reporte PDF:', error);
+        alert('Ocurrió un error al generar el reporte PDF.');
     }
 }
 
