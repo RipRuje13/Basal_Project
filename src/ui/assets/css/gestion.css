@@ -6,8 +6,21 @@
 html,
 body {
     min-height: 100%;
-    overflow-y: auto;
-    overflow-x: auto;
+}
+
+/* ================================
+   Navbar anclado arriba (fijo al hacer scroll).
+   ================================ */
+.navbar-fijo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+}
+
+body {
+    padding-top: 64px;
 }
 
 /* Separacion entre las tarjetas de administracion */
