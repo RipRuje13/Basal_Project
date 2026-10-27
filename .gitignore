@@ -46,8 +46,10 @@ data/*.sqlite3
 *.db-wal
 *.db-shm
 
-# Fotografias subidas por el usuario (contenido local, no codigo)
-data/almacen-fotos/
+# Fotografias subidas por el usuario (contenido local, no codigo).
+# Se ignora el contenido con /* (no el directorio entero) para poder
+# versionar Not-Found.png como excepcion.
+data/almacen-fotos/*
 # ...excepto la imagen de reemplazo "no encontrada", que es un asset de la app
 !data/almacen-fotos/Not-Found.png
 
