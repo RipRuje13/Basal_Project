@@ -1,0 +1,56 @@
+<div class="container-fluid mt-4" id="respaldosRoot">
+
+    <h3 class="mb-4" id="pageTitle">Respaldos</h3>
+
+    <p class="text-muted">
+        Administra las copias de seguridad de la base de datos del sistema
+        (compras, almacén, calendarios, actividades y configuración).
+    </p>
+
+    <!-- ================================
+         Card: Exportar respaldo
+         ================================ -->
+    <div class="card border-secondary mb-3">
+        <div class="card-header">
+            <i class="bi bi-download me-1"></i> Exportar base de datos
+        </div>
+        <div class="card-body">
+            <p class="mb-3">
+                Genera una copia de la base de datos actual y la guarda en la
+                ubicación que elijas. Úsala para resguardar tu información.
+            </p>
+            <button id="btnExportarBd" type="button" class="btn btn-primary">
+                <i class="bi bi-download me-1"></i> Exportar respaldo
+            </button>
+        </div>
+    </div>
+
+    <!-- ================================
+         Card: Importar respaldo
+         ================================ -->
+    <div class="card border-danger mb-3">
+        <div class="card-header text-danger">
+            <i class="bi bi-upload me-1"></i> Importar base de datos
+        </div>
+        <div class="card-body">
+            <p class="mb-2">
+                Reemplaza la base de datos actual por un archivo de respaldo
+                (.db) que selecciones.
+            </p>
+            <div class="alert alert-warning py-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                Esta acción <strong>sobrescribe todos los datos actuales</strong>
+                y reinicia la aplicación. Asegúrate de exportar un respaldo antes
+                si quieres conservar la información vigente.
+            </div>
+            <button id="btnImportarBd" type="button" class="btn btn-danger">
+                <i class="bi bi-upload me-1"></i> Importar respaldo
+            </button>
+        </div>
+    </div>
+
+    <div id="respaldoMensaje" class="mt-3"></div>
+
+</div>
+
+<script src="../js/respaldos.js"></script>

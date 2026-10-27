@@ -22,6 +22,7 @@
     if (page === "gestion.html") return "gestion";
     if (page === "calendarios.html") return "calendarios";
     if (page === "actividades.html") return "actividades";
+    if (page === "respaldos.html") return "respaldos";
     return "dashboard";
   }
 
@@ -34,6 +35,7 @@
     gestion: "Gestión",
     calendarios: "Calendarios",
     actividades: "Actividades",
+    respaldos: "Respaldos",
   };
 
   async function bootstrapContent() {
@@ -54,6 +56,7 @@
       gestion: "navGestion",
       calendarios: "navCalendarios",
       actividades: "navActividades",
+      respaldos: "navRespaldos",
     };
 
     if (navbarMount) {
@@ -80,6 +83,7 @@
       gestion: "../partials/gestion-fragment.html",
       calendarios: "../partials/calendarios-fragment.html",
       actividades: "../partials/actividades-fragment.html",
+      respaldos: "../partials/respaldos-fragment.html",
     };
 
     const contentMount = document.getElementById("contentArea");

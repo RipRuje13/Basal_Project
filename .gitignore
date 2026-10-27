@@ -98,3 +98,6 @@ $RECYCLE.BIN/
 *~
 .directory
 .Trash-*
+
+# Respaldo automático previo a una importación de base de datos
+*.pre-import.bak
