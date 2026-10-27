@@ -1,5 +1,6 @@
 const { webUtils } = require('electron');
 const { pathToFileURL } = require('url');
+const path = require('path');
 const almacenService = require('../../services/almacen.service');
 const gestionService = require('../../services/gestion.service');
 
@@ -58,6 +59,15 @@ function initAlmacen() {
         }
 
         return pathToFileURL(texto).href;
+    }
+
+    // URL file:// de la imagen de reemplazo (data/almacen-fotos/Not-Found.png),
+    // que se muestra cuando una foto fue borrada o movida y no se encuentra.
+    function getNotFoundSrc() {
+        const ruta = path.join(
+            __dirname, '..', '..', '..', 'data', 'almacen-fotos', 'Not-Found.png'
+        );
+        return pathToFileURL(ruta).href;
     }
 
     function getFotoNombre(ruta) {
@@ -453,9 +463,14 @@ function initAlmacen() {
             galeria.classList.add('galeria-carrusel');
         }
 
+        const notFoundSrc = getNotFoundSrc();
+
         galeria.innerHTML = fotografias.map((foto) => `
             <div class="foto-producto">
-                <img src="${escapeHtml(getFotoSrc(foto))}" alt="Fotografia del producto" />
+                <img
+                    src="${escapeHtml(getFotoSrc(foto))}"
+                    alt="Fotografia del producto"
+                    onerror="this.onerror=null; this.src='${escapeHtml(notFoundSrc)}';" />
                 <div class="foto-producto-nombre" title="${escapeHtml(getFotoNombre(foto))}">
                     ${escapeHtml(getFotoNombre(foto))}
                 </div>

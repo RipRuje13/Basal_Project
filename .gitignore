@@ -48,6 +48,8 @@ data/*.sqlite3
 
 # Fotografias subidas por el usuario (contenido local, no codigo)
 data/almacen-fotos/
+# ...excepto la imagen de reemplazo "no encontrada", que es un asset de la app
+!data/almacen-fotos/Not-Found.png
 
 # ===============================
 #  Variables de entorno y secretos

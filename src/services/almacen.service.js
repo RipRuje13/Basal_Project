@@ -407,7 +407,6 @@ async function eliminarProducto(id) {
 
 async function agregarFotografia(id, origen) {
     await initPromise;
-    ensureStorage();
 
     const producto = await obtenerProductoPorId(id);
     if (!producto) {
@@ -418,22 +417,18 @@ async function agregarFotografia(id, origen) {
         throw new Error('La imagen seleccionada no existe');
     }
 
-    const destino = estaEnCarpetaFotos(origen)
-        ? normalizarRutaArchivo(origen)
-        : crearDestinoConNombreOriginal(origen);
-
-    if (!esMismaRuta(origen, destino) && !fs.existsSync(destino)) {
-        fs.copyFileSync(origen, destino);
-    }
+    // Se guarda la RUTA ORIGINAL de la imagen (no se copia a almacen-fotos).
+    // La foto se referencia desde su ubicación original en el equipo.
+    const ruta = normalizarRutaArchivo(origen);
 
     const fotografiasActuales = obtenerRutasUnicas(producto.fotografias);
     const yaExiste = fotografiasActuales.some(
-        (foto) => esMismaRuta(foto, destino)
+        (foto) => esMismaRuta(foto, ruta)
     );
 
     const fotografias = yaExiste
         ? fotografiasActuales
-        : [...fotografiasActuales, destino];
+        : [...fotografiasActuales, ruta];
 
     await run(`
         UPDATE almacendb
