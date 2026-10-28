@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const { getConnection } = require('../database/connection');
+const { FOTOS_DIR } = require('../database/paths');
 
 const db = getConnection();
-const fotosDir = path.join(__dirname, '..', '..', 'data', 'almacen-fotos');
+const fotosDir = FOTOS_DIR;
 
 function run(sql, params = []) {
     return new Promise((resolve, reject) => {

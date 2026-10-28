@@ -1,16 +1,12 @@
-const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const { DB_PATH, asegurarBaseDatos } = require('./paths');
 
-const dbPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    'data',
-    'inventario.db'
-);
+// Garantiza que la carpeta de datos exista y, en producción, que la base de
+// datos esté copiada en userData antes de abrir la conexión.
+asegurarBaseDatos();
 
 const connection = new sqlite3.Database(
-    dbPath,
+    DB_PATH,
     (err) => {
         if (err) {
             console.error(

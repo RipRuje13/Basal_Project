@@ -3,6 +3,7 @@ const { pathToFileURL } = require('url');
 const path = require('path');
 const almacenService = require('../../services/almacen.service');
 const gestionService = require('../../services/gestion.service');
+const { FOTOS_DIR } = require('../../database/paths');
 
 function initAlmacen() {
     const almacenForm = document.getElementById('almacenForm');
@@ -61,12 +62,11 @@ function initAlmacen() {
         return pathToFileURL(texto).href;
     }
 
-    // URL file:// de la imagen de reemplazo (data/almacen-fotos/Not-Found.png),
-    // que se muestra cuando una foto fue borrada o movida y no se encuentra.
+    // URL file:// de la imagen de reemplazo "Not-Found.png", que se muestra
+    // cuando una foto fue borrada o movida y no se encuentra. Se resuelve
+    // desde la carpeta de fotos centralizada (data/ en dev, userData en prod).
     function getNotFoundSrc() {
-        const ruta = path.join(
-            __dirname, '..', '..', '..', 'data', 'almacen-fotos', 'Not-Found.png'
-        );
+        const ruta = path.join(FOTOS_DIR, 'Not-Found.png');
         return pathToFileURL(ruta).href;
     }
 

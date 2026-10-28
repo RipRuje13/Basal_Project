@@ -14,7 +14,10 @@
     "appId": "com.basal.inventario",
     "productName": "Sistema Inventario SIN",
     "win": {
-      "target": "nsis",
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "data/almacen-fotos/icono-SIN.ico"
     },
     "nsis": {
@@ -24,14 +27,17 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Sistema Inventario SIN"
     },
+    "portable": {
+      "artifactName": "SistemaInventarioSIN-portable.exe"
+    },
     "files": [
       "src/**/*",
       "package.json"
     ],
     "extraResources": [
       {
-        "from": "data/almacen-fotos/icono-SIN.ico",
-        "to": "icono-SIN.ico"
+        "from": "data/inventario.db",
+        "to": "inventario.db"
       },
       {
         "from": "data/almacen-fotos/Not-Found.png",
@@ -40,12 +46,11 @@
     ]
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0",
-    "electron": "^42.3.3",
     "electron-reload": "^2.0.0-alpha.1",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
+    "electron": "^42.3.3",
     "electron-builder": "^24.13.3",
     "electron-rebuild": "^2.0.3"
   }

@@ -4,7 +4,17 @@ const {createWindow} = require('./window')
 const {app, ipcMain, dialog, BrowserWindow} = require('electron')
 
 require('../database/connection')
-require('electron-reload')(path.join(__dirname, '..'))
+
+// electron-reload es solo para desarrollo (recarga en caliente). En la app
+// empaquetada no debe cargarse.
+if (!app.isPackaged) {
+    try {
+        require('electron-reload')(path.join(__dirname, '..'));
+    }
+    catch (e) {
+        // electron-reload puede no estar disponible; no es crítico.
+    }
+}
 
 app.allowRendererProcessReuse = false;
 
@@ -18,8 +28,8 @@ if (process.platform === 'win32') {
 
 app.whenReady().then(createWindow);
 
-// Ruta de la base de datos (misma que usa src/database/connection.js).
-const DB_PATH = path.join(__dirname, '..', '..', 'data', 'inventario.db');
+// Ruta de la base de datos centralizada (data/ en dev, userData en producción).
+const { DB_PATH } = require('../database/paths');
 
 // ============================================================
 // RESPALDO: exporta una copia del archivo de base de datos.
