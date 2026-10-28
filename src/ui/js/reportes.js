@@ -691,7 +691,7 @@ function renderReportesActividades(actividades) {
         tendencia.labels.length > 0
     );
 
-    // 6) Tiempo promedio de resolución (de creación a 'Hecho', en días)
+    // 6) Tiempo promedio de resolución (de creación a 'Hecho', en horas)
     renderTiempoPromedioActividades(actividades);
 }
 
@@ -713,14 +713,14 @@ function colorPrioridadActividad(prioridad) {
     return '#8d99ae';
 }
 
-// Calcula y muestra el tiempo promedio (días) entre fecha_creacion y
+// Calcula y muestra el tiempo promedio (en horas) entre fecha_creacion y
 // fecha_hecho de las actividades completadas que tengan ambos sellos.
 function renderTiempoPromedioActividades(actividades) {
 
     const elValor = document.getElementById('kpiActTiempoPromedio');
     const elDetalle = document.getElementById('kpiActTiempoDetalle');
 
-    const MS_POR_DIA = 24 * 60 * 60 * 1000;
+    const MS_POR_HORA = 60 * 60 * 1000;
 
     const duraciones = [];
 
@@ -733,9 +733,9 @@ function renderTiempoPromedioActividades(actividades) {
 
         if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return;
 
-        const dias = (fin.getTime() - inicio.getTime()) / MS_POR_DIA;
-        if (dias >= 0) {
-            duraciones.push(dias);
+        const horas = (fin.getTime() - inicio.getTime()) / MS_POR_HORA;
+        if (horas >= 0) {
+            duraciones.push(horas);
         }
     });
 
@@ -752,7 +752,7 @@ function renderTiempoPromedioActividades(actividades) {
     const promedio =
         duraciones.reduce((acc, d) => acc + d, 0) / duraciones.length;
 
-    elValor.textContent = promedio.toFixed(1);
+    elValor.textContent = promedio.toFixed(1) + ' h';
 
     if (elDetalle) {
         elDetalle.textContent =
