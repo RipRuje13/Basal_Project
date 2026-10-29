@@ -1,6 +1,8 @@
 const { webUtils } = require('electron');
 const { pathToFileURL } = require('url');
 const path = require('path');
+const fs = require('fs');
+const { ipcRenderer } = require('electron');
 const almacenService = require('../../services/almacen.service');
 const gestionService = require('../../services/gestion.service');
 const { FOTOS_DIR } = require('../../database/paths');
@@ -608,6 +610,224 @@ function initAlmacen() {
 
     function aplicarFiltros() {
         renderAlmacen(obtenerProductosFiltrados());
+    }
+
+    // =====================================
+    // EXPORTAR (EXCEL / PDF) CON IMÁGENES
+    // =====================================
+
+    const btnExportarAlmacen =
+        document.getElementById('btnExportarAlmacen');
+
+    const menuExportarAlmacen =
+        document.getElementById('menuExportarAlmacen');
+
+    // Columnas de datos a exportar (sin las fotos, que van en su propia columna).
+    const COLUMNAS_EXPORT_ALMACEN = [
+        { clave: 'id', titulo: 'ID' },
+        { clave: 'producto', titulo: 'Producto' },
+        { clave: 'marca', titulo: 'Marca' },
+        { clave: 'modelo', titulo: 'Modelo' },
+        { clave: 'no_serie', titulo: 'No. Serie' },
+        { clave: 'codigo_etiqueta', titulo: 'Código Etiqueta' },
+        { clave: 'departamento', titulo: 'Departamento' },
+        { clave: 'funciona', titulo: 'Funciona' },
+        { clave: 'ubicacion', titulo: 'Ubicación' },
+        { clave: 'usuario_actual', titulo: 'Usuario' },
+        { clave: 'fecha_ingreso', titulo: 'Fecha Ingreso' }
+    ];
+
+    // Lee una imagen de disco y la devuelve como data URI base64, o null si no
+    // existe o no se puede leer. Así las imágenes viajan dentro del archivo.
+    function imagenADataUri(ruta) {
+        try {
+            if (!ruta) return null;
+            const limpia = ruta.toString().replace(/^file:\/\//i, '');
+            const rutaFs = decodeURI(limpia);
+            if (!fs.existsSync(rutaFs)) return null;
+
+            const ext = (path.extname(rutaFs).replace('.', '') || 'png').toLowerCase();
+            const mime = ext === 'jpg' ? 'jpeg' : ext;
+            const datos = fs.readFileSync(rutaFs).toString('base64');
+            return `data:image/${mime};base64,${datos}`;
+        }
+        catch (e) {
+            return null;
+        }
+    }
+
+    // Devuelve el HTML de las imágenes de un producto (hasta un máximo), ya
+    // como data URI. Si una no se encuentra, se omite.
+    function imagenesHtmlProducto(producto, maxImgs) {
+        const fotos = Array.isArray(producto.fotografias) ? producto.fotografias : [];
+        const html = [];
+
+        for (const foto of fotos) {
+            if (html.length >= maxImgs) break;
+            const dataUri = imagenADataUri(foto);
+            if (dataUri) {
+                html.push(`<img src="${dataUri}" style="max-width:120px;max-height:90px;margin:2px;border:1px solid #ccc;" />`);
+            }
+        }
+
+        return html.length ? html.join('') : '<span style="color:#999">Sin imágenes</span>';
+    }
+
+    function describirFiltrosAlmacen() {
+        const partes = [];
+        const texto = (filtroTexto?.value || '').trim();
+        if (texto) partes.push(`Búsqueda: "${texto}"`);
+        const funciona = (filtroFunciona?.value || '').trim();
+        if (funciona) partes.push(`Funciona: ${funciona}`);
+        const depto = (filtroDepartamento?.value || '').trim();
+        if (depto) partes.push(`Departamento: ${depto}`);
+        const ubic = (filtroUbicacion?.value || '').trim();
+        if (ubic) partes.push(`Ubicación: ${ubic}`);
+        if (mesSeleccionado) partes.push(`Mes de ingreso: ${mesSeleccionado}`);
+        return partes.length ? partes.join('  |  ') : 'Sin filtros (todos los registros)';
+    }
+
+    function timestampArchivo() {
+        const n = new Date();
+        const p = (x) => String(x).padStart(2, '0');
+        return `${n.getFullYear()}${p(n.getMonth() + 1)}${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}`;
+    }
+
+    // Construye el cuerpo HTML (filas) compartido por Excel y PDF.
+    function construirFilasAlmacen(rows, maxImgs) {
+        return rows.map((prod) => {
+            const celdas = COLUMNAS_EXPORT_ALMACEN
+                .map((col) => `<td>${escapeHtml(prod[col.clave])}</td>`)
+                .join('');
+            const imgs = imagenesHtmlProducto(prod, maxImgs);
+            return `<tr>${celdas}<td>${imgs}</td></tr>`;
+        }).join('');
+    }
+
+    function encabezadoAlmacen() {
+        return COLUMNAS_EXPORT_ALMACEN
+            .map((col) => `<th>${escapeHtml(col.titulo)}</th>`)
+            .join('') + '<th>Imágenes</th>';
+    }
+
+    async function exportarAlmacenExcel(rows) {
+        const html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                  xmlns:x="urn:schemas-microsoft-com:office:excel"
+                  xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="UTF-8" />
+            <style>
+                table { border-collapse: collapse; }
+                th, td { border: 1px solid #999; padding: 4px 8px; vertical-align: top; }
+                th { background: #0d6efd; color: #fff; }
+            </style></head>
+            <body>
+                <table>
+                    <thead><tr>${encabezadoAlmacen()}</tr></thead>
+                    <tbody>${construirFilasAlmacen(rows, 3)}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        const contenido = '\uFEFF' + html;
+
+        return ipcRenderer.invoke('exportar-archivo', {
+            contenido,
+            nombreSugerido: `almacen_${timestampArchivo()}.xls`,
+            filtros: [{ name: 'Excel', extensions: ['xls'] }]
+        });
+    }
+
+    async function exportarAlmacenPdf(rows) {
+        const filtrosTexto = escapeHtml(describirFiltrosAlmacen());
+        const fecha = new Date().toLocaleString('es-MX');
+
+        const html = `
+            <!doctype html>
+            <html lang="es"><head><meta charset="UTF-8" />
+            <style>
+                * { font-family: Arial, Helvetica, sans-serif; }
+                body { padding: 16px; color: #212529; }
+                h1 { font-size: 18px; margin: 0 0 4px; }
+                .meta { font-size: 11px; color: #555; margin-bottom: 12px; }
+                table { border-collapse: collapse; width: 100%; font-size: 9px; }
+                th, td { border: 1px solid #ccc; padding: 3px 5px; text-align: left; vertical-align: top; }
+                th { background: #0d6efd; color: #fff; }
+                tr:nth-child(even) td { background: #f5f7fa; }
+                img { max-width: 90px; max-height: 70px; margin: 1px; }
+            </style></head>
+            <body>
+                <h1>Inventario de Almacén</h1>
+                <div class="meta">
+                    <div>Generado: ${escapeHtml(fecha)}</div>
+                    <div>Filtros: ${filtrosTexto}</div>
+                    <div>Total de registros: ${rows.length}</div>
+                </div>
+                <table>
+                    <thead><tr>${encabezadoAlmacen()}</tr></thead>
+                    <tbody>${construirFilasAlmacen(rows, 3)}</tbody>
+                </table>
+            </body></html>
+        `;
+
+        return ipcRenderer.invoke('exportar-pdf', {
+            html,
+            nombreSugerido: `almacen_${timestampArchivo()}.pdf`
+        });
+    }
+
+    async function exportarAlmacen(formato) {
+        const rows = obtenerProductosFiltrados();
+
+        if (!rows.length) {
+            alert('No hay registros para exportar con la configuración actual.');
+            return;
+        }
+
+        try {
+            const resultado = formato === 'pdf'
+                ? await exportarAlmacenPdf(rows)
+                : await exportarAlmacenExcel(rows);
+
+            if (resultado && resultado.success) {
+                console.log('Almacén exportado a:', resultado.filePath);
+            }
+            else if (resultado && !resultado.canceled) {
+                alert('No fue posible exportar el inventario.');
+            }
+        }
+        catch (error) {
+            console.error('Error al exportar almacén:', error);
+            alert('No fue posible exportar el inventario.');
+        }
+    }
+
+    if (btnExportarAlmacen && menuExportarAlmacen) {
+
+        btnExportarAlmacen.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const abierto = menuExportarAlmacen.classList.toggle('show');
+            btnExportarAlmacen.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        });
+
+        menuExportarAlmacen.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-formato]');
+            if (!item) return;
+            e.preventDefault();
+            menuExportarAlmacen.classList.remove('show');
+            btnExportarAlmacen.setAttribute('aria-expanded', 'false');
+            exportarAlmacen(item.dataset.formato);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (btnExportarAlmacen.contains(e.target) || menuExportarAlmacen.contains(e.target)) {
+                return;
+            }
+            menuExportarAlmacen.classList.remove('show');
+            btnExportarAlmacen.setAttribute('aria-expanded', 'false');
+        });
+
     }
 
     async function seleccionarProducto(id) {

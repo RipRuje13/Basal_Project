@@ -36,6 +36,31 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-end gap-2">
+          <div class="btn-group" role="group">
+            <button
+              id="btnExportarAlmacen"
+              type="button"
+              class="btn btn-outline-primary dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <i class="bi bi-download"></i> Exportar
+            </button>
+
+            <div
+              id="menuExportarAlmacen"
+              class="dropdown-menu dropdown-menu-end"
+              aria-labelledby="btnExportarAlmacen"
+            >
+              <button class="dropdown-item" type="button" data-formato="excel">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+              </button>
+              <button class="dropdown-item" type="button" data-formato="pdf">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+              </button>
+            </div>
+          </div>
+
           <button id="btnAgregarAlmacen" type="button" class="btn btn-success">
             Agregar
           </button>

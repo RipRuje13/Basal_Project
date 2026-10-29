@@ -168,10 +168,19 @@ ipcMain.handle('exportar-pdf', async (event, { html, nombreSugerido }) => {
         webPreferences: { offscreen: true }
     });
 
+    // Se escribe el HTML a un archivo temporal y se carga con loadFile en vez
+    // de una data URL: es robusto cuando el HTML es grande (p. ej. reportes de
+    // almacén con imágenes incrustadas en base64, que superan el límite de una
+    // data URL).
+    const htmlTemp = path.join(
+        app.getPath('temp'),
+        `basal_pdf_${Date.now()}.html`
+    );
+
     try {
-        await ventanaPdf.loadURL(
-            'data:text/html;charset=utf-8,' + encodeURIComponent(html)
-        );
+        fs.writeFileSync(htmlTemp, html, 'utf8');
+
+        await ventanaPdf.loadFile(htmlTemp);
 
         const pdf = await ventanaPdf.webContents.printToPDF({
             landscape: true,
@@ -185,5 +194,6 @@ ipcMain.handle('exportar-pdf', async (event, { html, nombreSugerido }) => {
     }
     finally {
         ventanaPdf.destroy();
+        try { fs.unlinkSync(htmlTemp); } catch (e) { /* limpieza best-effort */ }
     }
 });
